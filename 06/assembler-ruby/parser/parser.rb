@@ -5,7 +5,7 @@ module Assembler
     Instruction = Struct.new(:type, :symbol, :dest, :comp, :jump)
 
     def parse_line(raw_line)
-      line = raw_line.strip
+      line = raw_line.split('//')[0]&.strip.to_s
 
       if is_empty?(line) || is_comment?(line)
         return false
@@ -51,7 +51,7 @@ module Assembler
       table = BASE_SYMBOL_TABLE.dup
 
       file_data.each do |raw_line|
-        line = raw_line.strip
+        line = raw_line.split('//')[0]&.strip.to_s
 
         if is_empty?(line) || is_comment?(line)
           next
@@ -59,7 +59,15 @@ module Assembler
           extract_and_save_label(line, table, line_count)
 
           next
-        elsif is_a_instruction?(line)
+       else
+          line_count += 1
+        end
+      end
+
+      file_data.each do |raw_line|
+        line = raw_line.split('//')[0]&.strip.to_s
+
+        if is_a_instruction?(line)
           if contains_variable?(line)
             var_name = line[1..-1]
 
@@ -69,11 +77,7 @@ module Assembler
             end
           end
         end
-
-        line_count += 1
       end
-
-      puts table
 
       table
     end
@@ -82,7 +86,7 @@ module Assembler
 
     def extract_and_save_label(line, table, line_count)
       label = line[1..-2]
-      table.merge!(label => line_count + 1)
+      table.merge!(label => line_count)
     end
 
     def is_empty?(line)
@@ -102,7 +106,7 @@ module Assembler
     end
 
     def contains_variable?(line)
-      !(Float(line[1..-1]) != nil rescue false)
+      line == line.downcase && !(Float(line[1..-1]) != nil rescue false)
     end
   end
 end

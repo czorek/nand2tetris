@@ -9,6 +9,8 @@ module Assembler
       parser = Parser.new
       symbol_table = parser.prepare_symbol_table(assembly_file)
 
+      puts symbol_table
+
       # output file
       filename = extract_filename(assembly_path)
       output_file = File.open("#{filename}.hack", "a")
@@ -17,7 +19,6 @@ module Assembler
       assembly_data = assembly_file.readlines.map(&:chomp)
 
       assembly_data.each do |line|
-        puts line
         instruction = parser.parse_line(line)
 
         if instruction
