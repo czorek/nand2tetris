@@ -18,9 +18,14 @@ module VM
     '0' => 'THIS',
     '1' => 'THAT',
   }
-  
+
   CALCULATIONS = {
     'add' => 'M+D',
     'sub' => 'M-D',
+    'eq'  => 'JEQ',
+    'gt'  => 'JGT',
+    'lt'  => 'JLT',
+    'and' => 'D&M',
+    'or'  => 'D|M',
   }
 end
