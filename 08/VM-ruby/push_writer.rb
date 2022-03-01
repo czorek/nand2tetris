@@ -27,12 +27,7 @@ module VM
         @#{segment_pointer}
         A=D+M // address to push
         D=M // value to push
-        @SP
-        A=M
-        M=D
-        @SP
-        M=M+1
-        \n
+        #{push_and_increment_sp}
       STR
     end
 
@@ -46,12 +41,7 @@ module VM
         @5
         A=D+A // address to push
         D=M // value to push
-        @SP
-        A=M
-        M=D
-        @SP
-        M=M+1
-        \n
+        #{push_and_increment_sp}
       STR
     end
 
@@ -63,12 +53,7 @@ module VM
         // #{command.command_str}
         @#{segment_pointer}
         D=M
-        @SP
-        A=M
-        M=D
-        @SP
-        M=M+1
-        \n
+        #{push_and_increment_sp}
       STR
     end
 
@@ -79,12 +64,7 @@ module VM
         // #{command.command_str}
         @#{value}
         D=A
-        @SP
-        A=M
-        M=D
-        @SP
-        M=M+1
-        \n
+        #{push_and_increment_sp}
       STR
     end
 
@@ -95,6 +75,12 @@ module VM
         // #{command.command_str}
         @#{@filename}.#{index}
         D=M
+        #{push_and_increment_sp}
+      STR
+    end
+
+    def push_and_increment_sp
+      <<~STR
         @SP
         A=M
         M=D

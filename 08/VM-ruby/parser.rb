@@ -5,7 +5,7 @@ module VM
     Command = Struct.new(:type, :arg1, :arg2, :command_str)
 
     def parse(vm_line)
-      raw_line = vm_line.split('//')[0]&.strip.to_s
+      raw_line = strip_whitespace_and_comments(vm_line)
 
       if is_comment?(raw_line) || is_empty?(raw_line)
         return false
@@ -45,6 +45,10 @@ module VM
       elsif type == C_IF_GOTO
         return command_parts[1], ''
       end
+    end
+
+    def strip_whitespace_and_comments(vm_line)
+      vm_line.split('//')[0]&.strip.to_s
     end
   end
 end
