@@ -7,7 +7,7 @@ module VM
     def self.process(vm_filepath)
       vm_file = File.open(vm_filepath, 'r')
       output_filename = extract_filename(vm_filepath)
-      output_file = File.open("#{File.dirname(vm_file.path)}/#{output_filename}.asm", 'a')
+      output_file = File.open("#{File.dirname(vm_file.path)}/#{output_filename}.asm", "w")
 
       parser = Parser.new
       codewriter = CodeWriter.new(output_filename)

@@ -22,12 +22,7 @@ module VM
         D=A
         @5
         D=D+A // address to pop into
-        @SP
-        AM=M-1
-        D=D+M
-        A=D-M
-        M=D-A
-        \n
+        #{pop_and_decrement_sp}
      STR
     end
 
@@ -38,12 +33,7 @@ module VM
         // #{command.command_str}
         @#{@filename}.#{index}
         D=A // address to pop into
-        @SP
-        AM=M-1
-        D=D+M
-        A=D-M
-        M=D-A
-        \n
+        #{pop_and_decrement_sp}
       STR
     end
 
@@ -58,12 +48,7 @@ module VM
         D=A
         @#{segment_pointer}
         D=D+M // address to pop into
-        @SP
-        AM=M-1
-        D=D+M
-        A=D-M
-        M=D-A
-        \n
+        #{pop_and_decrement_sp}
       STR
     end
 
@@ -75,6 +60,12 @@ module VM
         // #{command.command_str}
         @#{segment_pointer}
         D=A // address to pop into
+        #{pop_and_decrement_sp}
+      STR
+    end
+
+    def pop_and_decrement_sp
+      <<~STR
         @SP
         AM=M-1
         D=D+M
