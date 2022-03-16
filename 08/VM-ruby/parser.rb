@@ -2,7 +2,6 @@ require_relative './constants.rb'
 
 module VM
   class Parser
-    Command = Struct.new(:type, :arg1, :arg2, :command_str)
 
     def parse(vm_line)
       raw_line = strip_whitespace_and_comments(vm_line)
@@ -38,12 +37,12 @@ module VM
         return command_parts[0], ''
       elsif [C_PUSH, C_POP].include? type
         return command_parts[1], command_parts[2]
-      elsif type == C_LABEL
+      elsif [C_LABEL, C_GOTO, C_IF_GOTO].include? type
         return command_parts[1], ''
-      elsif type == C_GOTO
-        return command_parts[1], ''
-      elsif type == C_IF_GOTO
-        return command_parts[1], ''
+      elsif type == C_FUNCTION
+        return command_parts[1], command_parts[2]
+      elsif type == C_RETURN
+        return command_parts[0]
       end
     end
 

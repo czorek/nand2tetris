@@ -31,6 +31,10 @@ module VM
         write_goto(command)
       when C_IF_GOTO
         write_if_goto(command)
+      when C_FUNCTION
+        write_function(command)
+      when C_RETURN
+        write_return(command)
       end
     end
 
@@ -65,6 +69,84 @@ module VM
         @#{label}
         D;JNE
         \n
+      STR
+    end
+
+    def write_function(command)
+      function_name = command.arg1
+      local_vars_count = command.arg2.to_i
+      init_var_command = Command.new(C_PUSH, 'constant', '0', 'push constant 0')
+
+      str = <<~STR
+        // function #{function_name}
+        (#{function_name})
+      STR
+
+      local_vars_count.times { |_| str << write_push(init_var_command) }
+
+      str
+    end
+
+    def write_return(command)
+      <<~STR
+      // return
+      // frame = LCL
+      @LCL
+      D=M
+      @frame
+      M=D
+      // retAddr = *(frame-5)
+      @frame
+      D=M
+      @5
+      A=D-A
+      D=M
+      @retAddr
+      M=D
+      // *ARG = pop()
+      @ARG
+      D=M
+      #{pop_and_decrement_sp}
+      // SP = ARG+1
+      @ARG
+      D=M+1
+      @SP
+      M=D
+      // THAT = *(frame-1)
+      @frame
+      A=M-1
+      D=M
+      @THAT
+      M=D
+      // THIS = *(frame-2)
+      @frame
+      D=M
+      @2
+      A=D-A
+      D=M
+      @THIS
+      M=D
+      // ARG = *(frame-3)
+      @frame
+      D=M
+      @3
+      A=D-A
+      D=M
+      @ARG
+      M=D
+      // LCL = *(frame-4)
+      @frame
+      D=M
+      @4
+      A=D-A
+      D=M
+      @LCL
+      M=D
+      // goto retAddr
+      @retAddr
+      A=M
+      0;JMP
+      \n
       STR
     end
   end

@@ -71,7 +71,6 @@ module VM
         D=D+M
         A=D-M
         M=D-A
-        \n
       STR
     end
   end

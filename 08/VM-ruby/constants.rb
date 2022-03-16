@@ -39,4 +39,6 @@ module VM
     'and' => 'D&M',
     'or'  => 'D|M',
   }
+
+  Command = Struct.new(:type, :arg1, :arg2, :command_str)
 end
