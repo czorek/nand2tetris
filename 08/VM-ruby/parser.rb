@@ -35,12 +35,10 @@ module VM
     def infer_args(type, command_parts)
       if type == C_ARITHMETIC
         return command_parts[0], ''
-      elsif [C_PUSH, C_POP].include? type
+      elsif [C_PUSH, C_POP, C_FUNCTION, C_CALL].include? type
         return command_parts[1], command_parts[2]
       elsif [C_LABEL, C_GOTO, C_IF_GOTO].include? type
         return command_parts[1], ''
-      elsif type == C_FUNCTION
-        return command_parts[1], command_parts[2]
       elsif type == C_RETURN
         return command_parts[0]
       end

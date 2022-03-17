@@ -9,6 +9,8 @@ module VM
   C_RETURN     = 8
   C_CALL       = 9
 
+  VM_EXTENSION = '.vm'
+
   COMMAND_TYPES = {
     'push' => C_PUSH,
     'pop'  => C_POP,

@@ -86,7 +86,6 @@ module VM
         M=D
         @SP
         M=M+1
-        \n
       STR
     end
   end

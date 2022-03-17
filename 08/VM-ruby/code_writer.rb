@@ -9,10 +9,11 @@ module VM
     include PopWriter
     include ArithmeticWriter
 
-    def initialize(filename)
-      @filename = filename
+    def initialize
+      @filename = ''
       @static_pointer = 16
       @line_count = 0
+      @current_function = ''
     end
 
     def write(command)
@@ -33,13 +34,26 @@ module VM
         write_if_goto(command)
       when C_FUNCTION
         write_function(command)
+      when C_CALL
+        write_call(command)
       when C_RETURN
         write_return(command)
       end
     end
 
+    def set_filename(filename)
+      @filename = filename
+    end
+
+    attr_accessor :current_function
+    attr_reader   :filename
+
     def write_label(command)
       label = command.arg1
+
+      unless current_function.empty?
+        label = "#{current_function}$#{command.arg1}"
+      end
 
       <<~STR
         // label #{label}
@@ -49,6 +63,10 @@ module VM
 
     def write_goto(command)
       label = command.arg1
+
+      unless current_function.empty?
+        label = "#{current_function}$#{command.arg1}"
+      end
 
       <<~STR
         // goto #{label}
@@ -60,6 +78,10 @@ module VM
 
     def write_if_goto(command)
       label = command.arg1
+
+      unless current_function.empty?
+        label = "#{current_function}$#{command.arg1}"
+      end
 
       <<~STR
         // if-goto #{label}
@@ -74,6 +96,7 @@ module VM
 
     def write_function(command)
       function_name = command.arg1
+      @current_function = function_name
       local_vars_count = command.arg2.to_i
       init_var_command = Command.new(C_PUSH, 'constant', '0', 'push constant 0')
 
@@ -147,6 +170,53 @@ module VM
       A=M
       0;JMP
       \n
+      STR
+    end
+
+    def write_call(command)
+      label = "#{current_function}$ret.#{@line_count}"
+      callee = command.arg1
+      n_vars = command.arg2
+
+      <<~STR
+      // call #{command.command_str}
+      //push returnAddress
+      @#{label}
+      D=A
+      #{push_and_increment_sp}
+      // push LCL
+      @LCL
+      D=M
+      #{push_and_increment_sp}
+      // push ARG
+      @ARG
+      D=M
+      #{push_and_increment_sp}
+      // push THIS
+      @THIS
+      D=M
+      #{push_and_increment_sp}
+      // push THAT
+      @THAT
+      D=M
+      #{push_and_increment_sp}
+      // ARG = SP - 5 - nVars
+      @SP
+      D=M
+      @5
+      D=D-A
+      @#{n_vars}
+      D=D-A
+      @ARG
+      M=D
+      // LCL = SP
+      @SP
+      D=M
+      @LCL
+      M=D
+      @#{callee}
+      0;JMP
+      (#{label})
       STR
     end
   end
