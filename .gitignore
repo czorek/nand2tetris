@@ -1,0 +1,7 @@
+*.asm
+*.vm
+*.hdl
+*.out
+*.swp
+*.hack
+
