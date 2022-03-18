@@ -35,7 +35,7 @@ module VM
       when C_FUNCTION
         write_function(command)
       when C_CALL
-        write_call(command)
+        write_call_new(command)
       when C_RETURN
         write_return(command)
       end
@@ -165,6 +165,67 @@ module VM
       STR
     end
 
+    def write_call_new(command)
+      return_label = "#{current_function}$ret.#{@line_count}"
+      callee_label = command.arg1
+      n_vars = command.arg2
+
+      <<~STR
+      // #{command.command_str}
+      @#{return_label} //push returnAddress
+      D=A
+      @returnLabel
+      M=D
+      @#{n_vars}
+      D=A
+      @nVars
+      M=D
+      @#{callee_label}
+      D=A
+      @calleeLabel
+      M=D
+      @callSubroutine
+      0;JMP
+      (#{return_label})\n
+      STR
+    end
+
+    def write_call_subroutine
+      <<~STR
+      (callSubroutine)
+      @returnLabel //push returnAddress
+      D=M
+      #{push_and_increment_sp}
+      @LCL // push LCL
+      D=M
+      #{push_and_increment_sp}
+      @ARG // push ARG
+      D=M
+      #{push_and_increment_sp}
+      @THIS // push THIS
+      D=M
+      #{push_and_increment_sp}
+      @THAT // push THAT
+      D=M
+      #{push_and_increment_sp}
+      @SP // ARG = SP - 5 - nVars
+      D=M
+      @5
+      D=D-A
+      @nVars
+      D=D-M
+      @ARG
+      M=D
+      @SP // LCL = SP
+      D=M
+      @LCL
+      M=D
+      @calleeLabel
+      A=M
+      0;JMP
+      STR
+    end
+
     def write_call(command)
       label = "#{current_function}$ret.#{@line_count}"
       callee = command.arg1
@@ -204,5 +265,6 @@ module VM
       (#{label})\n
       STR
     end
+
   end
 end

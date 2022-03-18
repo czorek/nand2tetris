@@ -30,7 +30,7 @@ module VM
      end
 
       output_file.write(codewriter.write_return_subroutine)
-      # output_file.write(codewriter.write_call_subroutine)
+      output_file.write(codewriter.write_call_subroutine)
       output_file.write(end_loop)
     end
 
@@ -70,7 +70,7 @@ module VM
       D=A
       @SP
       M=D
-      #{codewriter.write_call(command)}
+      #{codewriter.write_call_new(command)}
       @Sys.init
       0;JMP
       STR
