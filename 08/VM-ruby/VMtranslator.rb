@@ -1,3 +1,4 @@
+require 'pry'
 require_relative './parser.rb'
 require_relative './code_writer.rb'
 require_relative './constants.rb'
@@ -17,10 +18,13 @@ module VM
         output_file.write(bootstrap)
 
         vm_files = Dir.children(vm_path).select { |filename| filename.end_with?(VM_EXTENSION) }
+
+        function_calls = scan_function_calls(vm_path, vm_files)
+
         vm_files.each do |filename|
           vm_file = File.open("#{vm_path}/#{filename}", 'r')
 
-          process_file(vm_file, output_file)
+          process_file(vm_file, output_file, function_calls)
         end
       else
         vm_file = File.open(vm_path, 'r')
@@ -37,14 +41,35 @@ module VM
     private
     attr_reader :parser, :codewriter
 
-    def process_file(vm_file, output_file)
+    def scan_function_calls(vm_path, vm_files)
+      vm_files.map do |filename|
+        str = IO.read("#{vm_path}/#{filename}")
+        str.scan(/(call \w+\.\w+ \d)/i)
+      end.flatten.map { |f_call| f_call.split(' ')[1] } << "Sys.init"
+    end
+
+    def process_file(vm_file, output_file, function_calls)
       codewriter.set_filename(extract_filename(vm_file.path))
       vm_lines = vm_file.readlines.compact.map(&:chomp)
+
+      skip_function = false
 
       vm_lines.each do |vm_line|
         command = parser.parse(vm_line)
 
         if command
+          if command.type == C_FUNCTION
+            skip_function = if function_calls.include?(command.arg1)
+              false
+            else
+              true
+            end
+          end
+
+          if skip_function
+            next
+          end
+
           code = codewriter.write(command)
           output_file.write("#{code.chomp}")
         end

@@ -225,46 +225,5 @@ module VM
       0;JMP
       STR
     end
-
-    def write_call(command)
-      label = "#{current_function}$ret.#{@line_count}"
-      callee = command.arg1
-      n_vars = command.arg2
-
-      <<~STR
-      // #{command.command_str}
-      @#{label} //push returnAddress
-      D=A
-      #{push_and_increment_sp}
-      @LCL // push LCL
-      D=M
-      #{push_and_increment_sp}
-      @ARG // push ARG
-      D=M
-      #{push_and_increment_sp}
-      @THIS // push THIS
-      D=M
-      #{push_and_increment_sp}
-      @THAT // push THAT
-      D=M
-      #{push_and_increment_sp}
-      @SP // ARG = SP - 5 - nVars
-      D=M
-      @5
-      D=D-A
-      @#{n_vars}
-      D=D-A
-      @ARG
-      M=D
-      @SP // LCL = SP
-      D=M
-      @LCL
-      M=D
-      @#{callee}
-      0;JMP
-      (#{label})\n
-      STR
-    end
-
   end
 end
