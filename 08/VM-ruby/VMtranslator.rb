@@ -29,6 +29,8 @@ module VM
         process_file(vm_file, output_file)
      end
 
+      output_file.write(codewriter.write_return_subroutine)
+      # output_file.write(codewriter.write_call_subroutine)
       output_file.write(end_loop)
     end
 

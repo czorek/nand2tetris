@@ -110,11 +110,18 @@ module VM
       str
     end
 
-    def write_return(command)
+    def write_return(_command)
       <<~STR
-      // return
-      // frame = LCL
-      @LCL
+      @returnSubroutine
+      0;JMP
+      \n
+      STR
+    end
+
+    def write_return_subroutine
+      <<~STR
+      (returnSubroutine) // return
+      @LCL // frame = LCL
       D=M
       @frame
       M=D
