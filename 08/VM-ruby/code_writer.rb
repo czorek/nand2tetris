@@ -69,10 +69,8 @@ module VM
       end
 
       <<~STR
-        // goto #{label}
-        @#{label}
-        D;JMP
-        \n
+        @#{label} // goto #{label}
+        D;JMP\n
       STR
     end
 
@@ -84,13 +82,11 @@ module VM
       end
 
       <<~STR
-        // if-goto #{label}
-        @SP
+        @SP // if-goto #{label}
         AM=M-1
         D=M
         @#{label}
-        D;JNE
-        \n
+        D;JNE\n
       STR
     end
 
@@ -101,8 +97,7 @@ module VM
       init_var_command = Command.new(C_PUSH, 'constant', '0', 'push constant 0')
 
       str = <<~STR
-        // function #{function_name}
-        (#{function_name})
+        (#{function_name}) // function #{function_name}\n
       STR
 
       local_vars_count.times { |_| str << write_push(init_var_command) }
@@ -113,8 +108,7 @@ module VM
     def write_return(_command)
       <<~STR
       @returnSubroutine
-      0;JMP
-      \n
+      0;JMP\n
       STR
     end
 
@@ -125,58 +119,49 @@ module VM
       D=M
       @frame
       M=D
-      // retAddr = *(frame-5)
-      @frame
+      @frame // retAddr = *(frame-5)
       D=M
       @5
       A=D-A
       D=M
       @retAddr
       M=D
-      // *ARG = pop()
-      @ARG
+      @ARG // *ARG = pop()
       D=M
       #{pop_and_decrement_sp}
-      // SP = ARG+1
-      @ARG
+      @ARG // SP = ARG+1
       D=M+1
       @SP
       M=D
-      // THAT = *(frame-1)
-      @frame
+      @frame // THAT = *(frame-1)
       A=M-1
       D=M
       @THAT
       M=D
-      // THIS = *(frame-2)
-      @frame
+      @frame // THIS = *(frame-2)
       D=M
       @2
       A=D-A
       D=M
       @THIS
       M=D
-      // ARG = *(frame-3)
-      @frame
+      @frame // ARG = *(frame-3)
       D=M
       @3
       A=D-A
       D=M
       @ARG
       M=D
-      // LCL = *(frame-4)
-      @frame
+      @frame // LCL = *(frame-4)
       D=M
       @4
       A=D-A
       D=M
       @LCL
       M=D
-      // goto retAddr
-      @retAddr
+      @retAddr // goto retAddr
       A=M
-      0;JMP
-      \n
+      0;JMP\n
       STR
     end
 
@@ -186,29 +171,23 @@ module VM
       n_vars = command.arg2
 
       <<~STR
-      // call #{command.command_str}
-      //push returnAddress
-      @#{label}
+      // #{command.command_str}
+      @#{label} //push returnAddress
       D=A
       #{push_and_increment_sp}
-      // push LCL
-      @LCL
+      @LCL // push LCL
       D=M
       #{push_and_increment_sp}
-      // push ARG
-      @ARG
+      @ARG // push ARG
       D=M
       #{push_and_increment_sp}
-      // push THIS
-      @THIS
+      @THIS // push THIS
       D=M
       #{push_and_increment_sp}
-      // push THAT
-      @THAT
+      @THAT // push THAT
       D=M
       #{push_and_increment_sp}
-      // ARG = SP - 5 - nVars
-      @SP
+      @SP // ARG = SP - 5 - nVars
       D=M
       @5
       D=D-A
@@ -216,14 +195,13 @@ module VM
       D=D-A
       @ARG
       M=D
-      // LCL = SP
-      @SP
+      @SP // LCL = SP
       D=M
       @LCL
       M=D
       @#{callee}
       0;JMP
-      (#{label})
+      (#{label})\n
       STR
     end
   end

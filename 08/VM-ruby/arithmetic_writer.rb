@@ -21,8 +21,7 @@ module VM
       calc = CALCULATIONS.fetch(command.arg1)
 
       <<~STR
-        // #{command.command_str}
-        @SP
+        @SP // #{command.command_str}
         AM=M-1
         D=M // value from top of stack
         @SP
@@ -36,8 +35,7 @@ module VM
       calc = CALCULATIONS.fetch(command.arg1)
 
       <<~STR
-        // #{command.command_str}
-        @SP
+        @SP // #{command.command_str}
         AM=M-1
         D=M // value from top of stack
         @SP
@@ -51,8 +49,7 @@ module VM
       jump = CALCULATIONS.fetch(command.arg1)
 
       <<~STR
-        // #{command.command_str}
-        @SP
+        @SP // #{command.command_str}
         AM=M-1
         D=M // value from top of stack
         @SP
@@ -71,8 +68,7 @@ module VM
 
     def write_neg(command)
       <<~STR
-        // #{command.command_str}
-        @SP
+        @SP // #{command.command_str}
         A=M-1
         M=-M
         \n
@@ -81,8 +77,7 @@ module VM
 
     def write_not(command)
       <<~STR
-        // #{command.command_str}
-        @SP
+        @SP // #{command.command_str}
         A=M-1
         M=!M
         \n

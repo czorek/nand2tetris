@@ -58,8 +58,8 @@ module VM
     def end_loop
       <<~STR
       (END)
-        @END
-        0;JMP
+      @END
+      0;JMP
       STR
     end
 

@@ -17,8 +17,7 @@ module VM
       index = command.arg2
 
       <<~STR
-        // #{command.command_str}
-        @#{index}
+        @#{index} // #{command.command_str}
         D=A
         @5
         D=D+A // address to pop into
@@ -30,8 +29,7 @@ module VM
       index = command.arg2
 
       <<~STR
-        // #{command.command_str}
-        @#{@filename}.#{index}
+        @#{@filename}.#{index} // #{command.command_str}
         D=A // address to pop into
         #{pop_and_decrement_sp}
       STR
@@ -43,8 +41,7 @@ module VM
       segment_pointer = POINTER_MAP.fetch(segment)
 
       <<~STR
-        // #{command.command_str}
-        @#{index}
+        @#{index} // #{command.command_str}
         D=A
         @#{segment_pointer}
         D=D+M // address to pop into
@@ -57,8 +54,7 @@ module VM
       segment_pointer = POINTER_MAP.fetch(index)
 
       <<~STR
-        // #{command.command_str}
-        @#{segment_pointer}
+        @#{segment_pointer} // #{command.command_str}
         D=A // address to pop into
         #{pop_and_decrement_sp}
       STR
@@ -75,4 +71,3 @@ module VM
     end
   end
 end
-

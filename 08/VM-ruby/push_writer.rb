@@ -21,8 +21,7 @@ module VM
       segment_pointer = POINTER_MAP.fetch(segment)
 
       <<~STR
-        // #{command.command_str}
-        @#{index}
+        @#{index} // #{command.command_str}
         D=A
         @#{segment_pointer}
         A=D+M // address to push
@@ -35,8 +34,7 @@ module VM
       index = command.arg2
 
       <<~STR
-        // #{command.command_str}
-        @#{index}
+        @#{index} // #{command.command_str}
         D=A
         @5
         A=D+A // address to push
@@ -50,8 +48,7 @@ module VM
       segment_pointer = POINTER_MAP.fetch(index)
 
       <<~STR
-        // #{command.command_str}
-        @#{segment_pointer}
+        @#{segment_pointer} // #{command.command_str}
         D=M
         #{push_and_increment_sp}
       STR
@@ -61,8 +58,7 @@ module VM
       value = command.arg2
 
       <<~STR
-        // #{command.command_str}
-        @#{value}
+        @#{value} // #{command.command_str}
         D=A
         #{push_and_increment_sp}
       STR
@@ -72,8 +68,7 @@ module VM
       index = command.arg2
 
       <<~STR
-        // #{command.command_str}
-        @#{@filename}.#{index}
+        @#{@filename}.#{index} // #{command.command_str}
         D=M
         #{push_and_increment_sp}
       STR
