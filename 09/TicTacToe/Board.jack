@@ -1,0 +1,37 @@
+class Board {
+  static int fieldsCount;
+  field Array data;
+
+  constructor Board new() {
+    let data = Array.new(9);
+    return this;
+  }
+
+  method void reset() {
+    let data = Array.new(9);
+    return;
+  }
+
+  method void putPlayerSign(int position, String sign) {
+    do Output.printString(sign);
+    let data[position] = sign;
+    return;
+  }
+
+  method String getPosition(int position) {
+    return data[position];
+  }
+
+  method boolean fieldAvailable(int position) {
+    if (data[position] = null) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  method void dispose() {
+    do Memory.deAlloc(this);
+    return;
+  }
+}

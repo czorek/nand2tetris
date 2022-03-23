@@ -1,0 +1,105 @@
+class TicTacToe {
+  static int win;
+  static int draw;
+  static String alreadyTaken;
+  static String moveAgain;
+
+  field String signO;
+  field String signX;
+  field Board board;
+  field String currentSign;
+
+  function void init() {
+    let win = 1;
+    let draw = 2;
+    let alreadyTaken = "Field already taken, move again";
+    let moveAgain = "Move again";
+
+    return;
+  }
+
+  constructor TicTacToe new() {
+    let signX = "X";
+    let signO = "O";
+    let board = Board.new();
+    let currentSign = signX;
+
+    do board.reset();
+    // do board.draw();
+
+    return this;
+  }
+
+  method void run() {
+    var boolean exit;
+    let exit = false;
+
+    while (~exit) {
+      do move();
+
+      // if (gameWon()) {
+      //   let exit = restart(win);
+      // } if (gameDrawn()) {
+      //   let exit = restart(draw);
+      // }
+
+    }
+    return;
+  }
+
+  method void move() {
+    var char key;
+    var int position;
+
+    let key = Keyboard.readChar();
+
+    if (key = 49) { let position = 1; }
+    if (key = 50) { let position = 2; }
+    if (key = 51) { let position = 3; }
+    if (key = 52) { let position = 4; }
+    if (key = 53) { let position = 5; }
+    if (key = 54) { let position = 6; }
+    if (key = 55) { let position = 7; }
+    if (key = 56) { let position = 8; }
+    if (key = 57) { let position = 9; }
+
+    if (position = 0) {
+      // puts wrong key pressed
+
+      do Output.printString(moveAgain);
+      do Output.println();
+      do move();
+    }
+
+    if (board.fieldAvailable(position)) {
+      do board.putPlayerSign(position, currentSign);
+      do Output.printInt(position);
+      do Output.printString(currentSign);
+      do Output.printString(moveAgain);
+      do Output.println();
+      do switchPlayer();
+      // do board.draw();
+    } else {
+      do Output.printString(alreadyTaken);
+      do Output.println();
+      do move();
+    }
+
+    return;
+  }
+
+  method void switchPlayer() {
+    if (currentSign = signX) {
+      let currentSign = signO;
+    } else {
+      let currentSign = signX;
+    }
+    return;
+  }
+
+  method void dispose() {
+    do board.dispose();
+    do Memory.deAlloc(this);
+    return;
+  }
+}
