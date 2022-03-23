@@ -3,9 +3,10 @@ class TicTacToe {
   static int draw;
   static String alreadyTaken;
   static String moveAgain;
+  static String bye;
+  static String signO;
+  static String signX;
 
-  field String signO;
-  field String signX;
   field Board board;
   field String currentSign;
 
@@ -14,36 +15,56 @@ class TicTacToe {
     let draw = 2;
     let alreadyTaken = "Field already taken, move again";
     let moveAgain = "Move again";
+    let signX = "X";
+    let signO = "O";
+    let bye = "Bye!";
 
     return;
   }
 
+  function String getSignX() {
+    return signX;
+  }
+
+  function String getSignO() {
+    return signO;
+  }
+
   constructor TicTacToe new() {
-    let signX = "X";
-    let signO = "O";
     let board = Board.new();
     let currentSign = signX;
 
     do board.reset();
-    // do board.draw();
+    do board.draw();
 
     return this;
   }
 
   method void run() {
     var boolean exit;
+    var String result;
+
     let exit = false;
 
     while (~exit) {
       do move();
+      do board.draw();
 
-      // if (gameWon()) {
-      //   let exit = restart(win);
-      // } if (gameDrawn()) {
-      //   let exit = restart(draw);
-      // }
+      let result = board.evaluate();
 
+      if (result = signX) {
+        do Output.printString("X Won!");
+      }
+      if (result = signO) {
+        do Output.printString("O Won!");
+      }
+
+      if (board.getFieldsLeft() = 0) {
+        do Output.printString("DRAW");
+        let exit = true;
+      }
     }
+    do Output.printString(bye);
     return;
   }
 
@@ -64,31 +85,25 @@ class TicTacToe {
     if (key = 57) { let position = 9; }
 
     if (position = 0) {
-      // puts wrong key pressed
-
       do Output.printString(moveAgain);
-      do Output.println();
       do move();
     }
 
     if (board.fieldAvailable(position)) {
-      do board.putPlayerSign(position, currentSign);
+      do board.putSign(position, currentSign);
       do Output.printInt(position);
-      do Output.printString(currentSign);
+      do Output.printString(board.getPosition(position));
       do Output.printString(moveAgain);
-      do Output.println();
-      do switchPlayer();
-      // do board.draw();
+      do switchSign();
     } else {
       do Output.printString(alreadyTaken);
-      do Output.println();
       do move();
     }
 
     return;
   }
 
-  method void switchPlayer() {
+  method void switchSign() {
     if (currentSign = signX) {
       let currentSign = signO;
     } else {

@@ -1,9 +1,15 @@
 class Board {
-  static int fieldsCount;
   field Array data;
+  field String playOn;
+  field int fieldsLeft;
+  field int cellWidth;
 
   constructor Board new() {
     let data = Array.new(9);
+    let fieldsLeft = 9;
+    let playOn = "Play on";
+    let cellWidth = 50;
+
     return this;
   }
 
@@ -12,22 +18,114 @@ class Board {
     return;
   }
 
-  method void putPlayerSign(int position, String sign) {
+  method void putSign(int position, String sign) {
     do Output.printString(sign);
-    let data[position] = sign;
+    let data[position - 1] = sign;
+    let fieldsLeft = fieldsLeft - 1;
     return;
   }
 
   method String getPosition(int position) {
-    return data[position];
+    return data[position - 1];
+  }
+
+  method int getFieldsLeft() {
+    return fieldsLeft;
   }
 
   method boolean fieldAvailable(int position) {
-    if (data[position] = null) {
+    if (data[position - 1] = null) {
       return true;
     } else {
       return false;
     }
+  }
+
+  method String evaluate() {
+    var String result;
+    let result = playOn;
+
+    if (result = playOn & data[0] = data[1] & data[0] = data[2]) { let result = data[0]; }
+    if (result = playOn & data[3] = data[4] & data[3] = data[5]) { let result = data[3]; }
+    if (result = playOn & data[6] = data[7] & data[6] = data[8]) { let result = data[6]; }
+    if (result = playOn & data[0] = data[3] & data[0] = data[6]) { let result = data[0]; }
+    if (result = playOn & data[1] = data[4] & data[1] = data[7]) { let result = data[1]; }
+    if (result = playOn & data[2] = data[5] & data[2] = data[8]) { let result = data[2]; }
+    if (result = playOn & data[0] = data[4] & data[0] = data[8]) { let result = data[0]; }
+    if (result = playOn & data[6] = data[4] & data[6] = data[2]) { let result = data[6]; }
+
+    return result;
+  }
+
+  method void draw() {
+    var int i;
+    var String sign;
+
+    let i = 0;
+
+    do Screen.drawLine(100, 100, 250, 100);
+    do Screen.drawLine(100, 150, 250, 150);
+
+    do Screen.drawLine(150, 50, 150, 200);
+    do Screen.drawLine(200, 50, 200, 200);
+
+    while (i < 9) {
+      let sign = data[i];
+
+      if (sign = TicTacToe.getSignX()) { do drawX(i); }
+      if (sign = TicTacToe.getSignO()) { do drawO(i); }
+
+      let i = i + 1;
+    }
+
+    return;
+  }
+
+  method void drawX(int position) {
+    var int offsetX;
+    var int offsetY;
+    var int initX;
+    var int initY;
+    var int xWidth;
+
+    let xWidth = 40;
+    let initX = 105;
+    let initY = 55;
+    let offsetX = Board.modulo(position, 3) * cellWidth;
+    let offsetY = (position/3) * cellWidth;
+
+    do Screen.drawLine(initX + offsetX, initY + offsetY, initX + xWidth + offsetX, initY + xWidth + offsetY);
+    do Screen.drawLine(initX + offsetX + xWidth, initY + offsetY, initX + offsetX, initY + offsetY + xWidth);
+
+    return;
+  }
+
+  method void drawO(int position) {
+    var int offsetX;
+    var int offsetY;
+    var int initX;
+    var int initY;
+    var int radius;
+
+    let initX = 125;
+    let initY = 75;
+    let radius = 20;
+    let offsetX = Board.modulo(position, 3) * cellWidth;
+    let offsetY = (position/3) * cellWidth;
+
+    do Screen.drawCircle(initX + offsetX, initY + offsetY, radius);
+
+    return;
+  }
+
+  function int modulo(int num, int divisor) {
+    var int count;
+    var int res;
+
+    let count = num/divisor;
+    let res = num - (count * divisor);
+
+    return res;
   }
 
   method void dispose() {

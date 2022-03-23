@@ -2,9 +2,10 @@ class Main {
   function void main() {
     var TicTacToe game;
 
+    do TicTacToe.init();
+
     let game = TicTacToe.new();
 
-    do TicTacToe.init();
     do game.run();
     do game.dispose();
     return;
