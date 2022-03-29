@@ -15,11 +15,11 @@ class Board {
 
   method void reset() {
     let data = Array.new(9);
+    let fieldsLeft = 9;
     return;
   }
 
   method void putSign(int position, String sign) {
-    do Output.printString(sign);
     let data[position - 1] = sign;
     let fieldsLeft = fieldsLeft - 1;
     return;
@@ -42,41 +42,47 @@ class Board {
   }
 
   method String evaluate() {
-    var String result;
-    let result = playOn;
+    if ((data[0] = data[1]) & (data[1] = data[2])) { return data[0]; }
+    if ((data[3] = data[4]) & (data[4] = data[5])) { return data[3]; }
+    if ((data[6] = data[7]) & (data[7] = data[8])) { return data[6]; }
+    if ((data[0] = data[3]) & (data[3] = data[6])) { return data[0]; }
+    if ((data[1] = data[4]) & (data[4] = data[7])) { return data[1]; }
+    if ((data[2] = data[5]) & (data[5] = data[8])) { return data[2]; }
+    if ((data[0] = data[4]) & (data[4] = data[8])) { return data[0]; }
+    if ((data[6] = data[4]) & (data[4] = data[2])) { return data[6]; }
 
-    if (result = playOn & data[0] = data[1] & data[0] = data[2]) { let result = data[0]; }
-    if (result = playOn & data[3] = data[4] & data[3] = data[5]) { let result = data[3]; }
-    if (result = playOn & data[6] = data[7] & data[6] = data[8]) { let result = data[6]; }
-    if (result = playOn & data[0] = data[3] & data[0] = data[6]) { let result = data[0]; }
-    if (result = playOn & data[1] = data[4] & data[1] = data[7]) { let result = data[1]; }
-    if (result = playOn & data[2] = data[5] & data[2] = data[8]) { let result = data[2]; }
-    if (result = playOn & data[0] = data[4] & data[0] = data[8]) { let result = data[0]; }
-    if (result = playOn & data[6] = data[4] & data[6] = data[2]) { let result = data[6]; }
-
-    return result;
+    return playOn;
   }
 
   method void draw() {
     var int i;
     var String sign;
 
-    let i = 0;
+    do drawGrid();
 
+    let i = 0;
+    while (i < 9) {
+      let sign = data[i];
+
+      if (sign = TicTacToe.getSignX()) {
+        do drawX(i);
+      }
+      if (sign = TicTacToe.getSignO()) {
+        do drawO(i);
+      }
+
+      let i = i + 1;
+    }
+
+    return;
+  }
+
+  method void drawGrid() {
     do Screen.drawLine(100, 100, 250, 100);
     do Screen.drawLine(100, 150, 250, 150);
 
     do Screen.drawLine(150, 50, 150, 200);
     do Screen.drawLine(200, 50, 200, 200);
-
-    while (i < 9) {
-      let sign = data[i];
-
-      if (sign = TicTacToe.getSignX()) { do drawX(i); }
-      if (sign = TicTacToe.getSignO()) { do drawO(i); }
-
-      let i = i + 1;
-    }
 
     return;
   }
@@ -91,7 +97,7 @@ class Board {
     let xWidth = 40;
     let initX = 105;
     let initY = 55;
-    let offsetX = Board.modulo(position, 3) * cellWidth;
+    let offsetX = Utils.modulo(position, 3) * cellWidth;
     let offsetY = (position/3) * cellWidth;
 
     do Screen.drawLine(initX + offsetX, initY + offsetY, initX + xWidth + offsetX, initY + xWidth + offsetY);
@@ -110,22 +116,12 @@ class Board {
     let initX = 125;
     let initY = 75;
     let radius = 20;
-    let offsetX = Board.modulo(position, 3) * cellWidth;
+    let offsetX = Utils.modulo(position, 3) * cellWidth;
     let offsetY = (position/3) * cellWidth;
 
     do Screen.drawCircle(initX + offsetX, initY + offsetY, radius);
 
     return;
-  }
-
-  function int modulo(int num, int divisor) {
-    var int count;
-    var int res;
-
-    let count = num/divisor;
-    let res = num - (count * divisor);
-
-    return res;
   }
 
   method void dispose() {

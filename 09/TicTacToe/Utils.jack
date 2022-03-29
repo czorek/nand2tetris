@@ -1,0 +1,11 @@
+class Utils {
+  function int modulo(int num, int divisor) {
+    var int count;
+    var int res;
+
+    let count = num/divisor;
+    let res = num - (count * divisor);
+
+    return res;
+  }
+}

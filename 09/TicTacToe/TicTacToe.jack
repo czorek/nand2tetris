@@ -1,8 +1,5 @@
 class TicTacToe {
-  static int win;
-  static int draw;
-  static String alreadyTaken;
-  static String moveAgain;
+  static String playAgain;
   static String bye;
   static String signO;
   static String signX;
@@ -11,10 +8,7 @@ class TicTacToe {
   field String currentSign;
 
   function void init() {
-    let win = 1;
-    let draw = 2;
-    let alreadyTaken = "Field already taken, move again";
-    let moveAgain = "Move again";
+    let playAgain = "Play again? y/n";
     let signX = "X";
     let signO = "O";
     let bye = "Bye!";
@@ -43,6 +37,7 @@ class TicTacToe {
   method void run() {
     var boolean exit;
     var String result;
+    var char key;
 
     let exit = false;
 
@@ -52,19 +47,36 @@ class TicTacToe {
 
       let result = board.evaluate();
 
-      if (result = signX) {
-        do Output.printString("X Won!");
+      if ((result = signX) | (result = signO)) {
+        do Output.println();
+        do Output.printString(result);
+        do Output.printString(" Won!");
+        let exit = true;
       }
-      if (result = signO) {
-        do Output.printString("O Won!");
-      }
-
       if (board.getFieldsLeft() = 0) {
+        do Output.println();
         do Output.printString("DRAW");
         let exit = true;
       }
     }
-    do Output.printString(bye);
+
+    do Output.println();
+    do Output.printString(playAgain);
+
+    let key = Keyboard.readChar();
+
+    if ((key = 121) | (key = 89)) {
+      do Screen.clearScreen();
+      do Output.moveCursor(0, 0);
+      do board.reset();
+      do board.draw();
+      do run();
+    } else {
+      do Output.println();
+      do Output.printString(bye);
+      do dispose();
+    }
+
     return;
   }
 
@@ -85,18 +97,13 @@ class TicTacToe {
     if (key = 57) { let position = 9; }
 
     if (position = 0) {
-      do Output.printString(moveAgain);
       do move();
     }
 
     if (board.fieldAvailable(position)) {
       do board.putSign(position, currentSign);
-      do Output.printInt(position);
-      do Output.printString(board.getPosition(position));
-      do Output.printString(moveAgain);
       do switchSign();
     } else {
-      do Output.printString(alreadyTaken);
       do move();
     }
 
