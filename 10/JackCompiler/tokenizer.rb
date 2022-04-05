@@ -1,8 +1,11 @@
 require './constants.rb'
+require './utils.rb'
 require 'pry'
 
 module Jack
   class Tokenizer
+    include Utils
+
     Token = Struct.new(:value, :type)
 
     def initialize(jack_file)
@@ -34,21 +37,17 @@ module Jack
     attr_reader :tokens
 
     def token_type(string)
-      if KEYWORDS.include? string
-        KEYWORD
-      elsif SYMBOLS.include? string
-        SYMBOL
+      if Strings::KEYWORDS.include? string
+        TokenType::KEYWORD
+      elsif Strings::SYMBOLS.include? string
+        TokenType::SYMBOL
       elsif is_number? string
-        INT_CONST
+        TokenType::INT_CONST
       elsif string.start_with? '"'
-        STRING_CONST
+        TokenType::STRING_CONST
       else
-        IDENTIFIER
+        TokenType::IDENTIFIER
       end
-    end
-
-    def is_number?(string)
-      Float(string) != nil rescue false
     end
   end
 end

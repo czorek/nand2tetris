@@ -1,5 +1,6 @@
 require './tokenizer.rb'
 require './constants.rb'
+require './compilation_engine.rb'
 require 'pry'
 
 module Jack
@@ -12,13 +13,13 @@ module Jack
 
         jack_files.each do |filename|
           jack_file = File.open("#{path}/#{filename}", "r")
-          output_file = File.open("#{path}/#{extract_filename(filename)}T1.xml", "w")
+          output_file = File.open("#{path}/#{extract_filename(filename)}1.xml", "w")
 
           process_file(jack_file, output_file)
         end
       else
         jack_file = File.open(path, "r")
-        output_file = File.open("#{File.dirname(path)}/#{extract_filename(path)}T1.xml", "w")
+        output_file = File.open("#{File.dirname(path)}/#{extract_filename(path)}1.xml", "w")
 
         process_file(jack_file, output_file)
       end
@@ -28,10 +29,12 @@ module Jack
 
     def process_file(jack_file, output_file)
       tokenizer = Tokenizer.new(jack_file)
-      produce_tokens_xml(tokenizer, output_file)
-      # engine = CompilationEngine.new(tokenizer, output_file)
+      # produce_tokens_xml(tokenizer, output_file)
+      engine = CompilationEngine.new(tokenizer, output_file)
 
-      # engine.compile
+      engine.compile_class
+    rescue CompilationEngine::SyntaxError => e
+      print e.message
     end
 
     def produce_tokens_xml(tokenizer, output_file)
