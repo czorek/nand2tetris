@@ -1,6 +1,7 @@
 module Jack
   GRAMMAR_REGEX = /("[^"]*"|\w+|=|\+|;|\d+|{|}|\(|\)|\[|\]|-|,|\.|"|&|<|>|\/|\*|\||~)/
   COMMENT_REGEX = /^\s*\*.*$|\/{2}.*$|\/\*\*.*$/
+  JACK_EXTENSION = '.jack'
 
   module Strings
     CLASS = 'class'

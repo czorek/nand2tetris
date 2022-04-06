@@ -1,5 +1,5 @@
-require './constants.rb'
-require './utils.rb'
+require_relative './constants.rb'
+require_relative './utils.rb'
 require 'pry'
 
 module Jack

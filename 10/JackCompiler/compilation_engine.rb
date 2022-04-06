@@ -1,4 +1,4 @@
-require './utils.rb'
+require_relative'./utils.rb'
 
 module Jack
   class CompilationEngine
@@ -26,39 +26,6 @@ module Jack
 
     private
     attr_reader :tokenizer, :output_file, :current_token
-
-    def process_identifier
-      if not is_number? current_token.value[0]
-        print_and_advance
-      else
-        msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
-        raise_syntax_error(msg)
-      end
-    end
-
-    def process_identifier_list
-      process_identifier
-
-      if current_token.value == Strings::COMMA
-        process(Strings::COMMA)
-        process_identifier_list
-      else
-        process(Strings::SEMICOLON)
-      end
-    end
-
-    def process_parameter_list
-      return if current_token.value == Strings::PAREN_R
-
-      process_type(*Strings::VAR_TYPES)
-
-      process_identifier
-
-      if current_token.value == Strings::COMMA
-        process(Strings::COMMA)
-        process_parameter_list
-      end
-    end
 
     def compile_class_var_dec
       return unless Strings::CLASS_VAR_DEC_KWDS.include? current_token.value
@@ -139,6 +106,39 @@ module Jack
       end
 
       compile_statements
+    end
+
+    def process_identifier
+      if not is_number? current_token.value[0]
+        print_and_advance
+      else
+        msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
+        raise_syntax_error(msg)
+      end
+    end
+
+    def process_identifier_list
+      process_identifier
+
+      if current_token.value == Strings::COMMA
+        process(Strings::COMMA)
+        process_identifier_list
+      else
+        process(Strings::SEMICOLON)
+      end
+    end
+
+    def process_parameter_list
+      return if current_token.value == Strings::PAREN_R
+
+      process_type(*Strings::VAR_TYPES)
+
+      process_identifier
+
+      if current_token.value == Strings::COMMA
+        process(Strings::COMMA)
+        process_parameter_list
+      end
     end
 
     def compile_if
