@@ -13,14 +13,15 @@ module Jack
     end
 
     def compile_class
-      output_file.write(opening_tag(Strings::CLASS) + "\n")
+      write_newline_opening_tag(Strings::CLASS)
       process(Strings::CLASS)
       process_identifier
       process(Strings::C_BRACKET_L)
       compile_class_var_dec
       compile_subroutines
       process(Strings::C_BRACKET_R)
-      output_file.write(closing_tag(Strings::CLASS))
+    rescue StopIteration
+      write_closing_tag(Strings::CLASS)
     end
 
     private
@@ -62,11 +63,11 @@ module Jack
     def compile_class_var_dec
       return unless Strings::CLASS_VAR_DEC_KWDS.include? current_token.value
 
-      output_file.write(opening_tag(Strings::CLASS_VAR_DEC) + "\n")
+      write_newline_opening_tag(Strings::CLASS_VAR_DEC)
       process(*Strings::CLASS_VAR_DEC_KWDS)
       process_type(*Strings::VAR_TYPES)
       process_identifier_list
-      output_file.write(closing_tag(Strings::CLASS_VAR_DEC))
+      write_closing_tag(Strings::CLASS_VAR_DEC)
 
       compile_class_var_dec
     end
@@ -74,11 +75,11 @@ module Jack
     def compile_var_dec
       return unless Strings::VAR == current_token.value
 
-      output_file.write(opening_tag(Strings::VAR_DEC) + "\n")
+      write_newline_opening_tag(Strings::VAR_DEC)
       process(*Strings::VAR)
       process_type(*Strings::VAR_TYPES)
       process_identifier_list
-      output_file.write(closing_tag(Strings::VAR_DEC))
+      write_closing_tag(Strings::VAR_DEC)
 
       compile_var_dec
     end
@@ -86,10 +87,10 @@ module Jack
     def compile_subroutines
       return unless Strings::SUBROUTINE_DEC_KWDS.include? current_token.value
 
-      output_file.write(opening_tag(Strings::SUBROUTINE_DEC) + "\n")
+      write_newline_opening_tag(Strings::SUBROUTINE_DEC)
       compile_subroutine_declaration
       compile_subroutine_body
-      output_file.write(closing_tag(Strings::SUBROUTINE_DEC) + "\n")
+      write_closing_tag(Strings::SUBROUTINE_DEC)
 
       compile_subroutines
    end
@@ -99,19 +100,24 @@ module Jack
       process_type(*Strings::SUBROUTINE_TYPES)
       process_identifier
       process(Strings::PAREN_L)
-      output_file.write(opening_tag(Strings::PARAMETER_LIST) + "\n")
+
+      write_newline_opening_tag(Strings::PARAMETER_LIST)
       process_parameter_list
-      output_file.write(closing_tag(Strings::PARAMETER_LIST) + "\n")
+      write_closing_tag(Strings::PARAMETER_LIST)
       process(Strings::PAREN_R)
     end
 
     def compile_subroutine_body
-      output_file.write(opening_tag(Strings::SUBROUTINE_BODY))
+      write_newline_opening_tag(Strings::SUBROUTINE_BODY)
       process(Strings::C_BRACKET_L)
       compile_var_dec
+
+      write_newline_opening_tag(Strings::STATEMENTS)
       compile_statements
+      write_closing_tag(Strings::STATEMENTS)
+
       process(Strings::C_BRACKET_R)
-      output_file.write(closing_tag(Strings::SUBROUTINE_BODY))
+      write_closing_tag(Strings::SUBROUTINE_BODY)
     end
 
     def compile_statements
@@ -120,16 +126,136 @@ module Jack
         compile_if
       when Strings::WHILE
         compile_while
-      when Strings::RETURN
-        compile_return
       when Strings::LET
         compile_let
       when Strings::DO
         compile_do
+      when Strings::RETURN
+        compile_return
       else
-        msg = "SyntaxError! Subroutine body needs at least one return statement"
+        return
+        msg = "SyntaxError! You need at least a return statement."
         raise_syntax_error(msg)
       end
+
+      compile_statements
+    end
+
+    def compile_if
+      write_newline_opening_tag(Strings::IF_STATEMENT)
+      process(Strings::IF)
+
+      compile_statement_expression
+      compile_statement_body
+
+      if Strings::ELSE == current_token.value
+        process(Strings::ELSE)
+        compile_statement_body
+      end
+
+      write_closing_tag(Strings::IF_STATEMENT)
+    end
+
+    def compile_while
+      write_newline_opening_tag(Strings::WHILE_STATEMENT)
+      process(Strings::WHILE)
+      compile_statement_expression
+      compile_statement_body
+      write_closing_tag(Strings::WHILE_STATEMENT)
+    end
+
+    def compile_let
+      write_newline_opening_tag(Strings::LET_STATEMENT)
+      process(Strings::LET)
+      process_identifier
+
+      if Strings::BRACKET_L == current_token.value
+        compile_array_index_expr
+      end
+
+      process(Strings::EQ)
+      compile_expression
+      process(Strings::SEMICOLON)
+
+      write_closing_tag(Strings::LET_STATEMENT)
+    end
+
+    def compile_do
+      write_newline_opening_tag(Strings::DO_STATEMENT)
+      process(Strings::DO)
+      compile_subroutine_call
+      process(Strings::SEMICOLON)
+      write_closing_tag(Strings::DO_STATEMENT)
+    end
+
+    def compile_return
+      write_newline_opening_tag(Strings::RETURN_STATEMENT)
+      process(Strings::RETURN)
+
+      unless Strings::SEMICOLON == current_token.value
+        compile_expression
+      end
+
+      process(Strings::SEMICOLON)
+      write_closing_tag(Strings::RETURN_STATEMENT)
+    end
+
+    def compile_statement_expression
+      process(Strings::PAREN_L)
+      compile_expression
+      process(Strings::PAREN_R)
+    end
+
+    def compile_statement_body
+      process(Strings::C_BRACKET_L)
+      write_newline_opening_tag(Strings::STATEMENTS)
+      compile_statements
+      write_closing_tag(Strings::STATEMENTS)
+      process(Strings::C_BRACKET_R)
+    end
+
+    def compile_array_index_expr
+      process(Strings::BRACKET_L)
+      compile_expression
+      process(Strings::BRACKET_R)
+    end
+
+    def compile_expression
+      write_newline_opening_tag(Strings::EXPRESSION)
+      compile_term
+      write_closing_tag(Strings::EXPRESSION)
+    end
+
+    def compile_term
+      write_newline_opening_tag(Strings::TERM)
+      process_identifier
+      write_closing_tag(Strings::TERM)
+    end
+
+    def compile_expression_list
+      return if current_token.value == Strings::PAREN_R
+
+      compile_expression
+
+      if current_token.value == Strings::COMMA
+        process(Strings::COMMA)
+        compile_expression_list
+      end
+    end
+
+    def compile_subroutine_call
+      process_identifier
+
+      if Strings::DOT == current_token.value
+        process(Strings::DOT)
+        process_identifier
+      end
+
+      process(Strings::PAREN_L)
+      write_newline_opening_tag(Strings::EXPRESSION_LIST)
+      compile_expression_list
+      write_closing_tag(Strings::EXPRESSION_LIST)
+      process(Strings::PAREN_R)
     end
 
     def process(*strings)
@@ -155,6 +281,19 @@ module Jack
 
       output_file.write line
       advance
+    end
+
+    def write_opening_tag(str)
+      output_file.write opening_tag str
+    end
+
+    def write_closing_tag(str)
+      output_file.write closing_tag str
+    end
+
+    def write_newline_opening_tag(str)
+      line = opening_tag(str) + "\n"
+      output_file.write line
     end
 
     def opening_tag(str)

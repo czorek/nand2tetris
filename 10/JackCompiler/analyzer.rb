@@ -10,8 +10,10 @@ module Jack
     def compile(path)
       if File.directory?(path)
         jack_files = Dir.children(path).select { |filename| filename.end_with?(JACK_EXTENSION) }
+        puts jack_files
 
         jack_files.each do |filename|
+          puts filename
           jack_file = File.open("#{path}/#{filename}", "r")
           output_file = File.open("#{path}/#{extract_filename(filename)}1.xml", "w")
 

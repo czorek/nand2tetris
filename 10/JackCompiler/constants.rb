@@ -117,7 +117,16 @@ module Jack
     SUBROUTINE_DEC = 'subroutineDec'
     SUBROUTINE_BODY = 'subroutineBody'
     PARAMETER_LIST = 'parameterList'
+    EXPRESSION_LIST = 'expressionList'
+    EXPRESSION = 'expression'
+    TERM = 'term'
     VAR_DEC = 'varDec'
+    STATEMENTS = 'statements'
+    IF_STATEMENT = 'ifStatement'
+    WHILE_STATEMENT = 'whileStatement'
+    LET_STATEMENT = 'letStatement'
+    DO_STATEMENT = 'doStatement'
+    RETURN_STATEMENT = 'returnStatement'
   end
 
   # token types
