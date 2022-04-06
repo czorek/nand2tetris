@@ -223,13 +223,63 @@ module Jack
     def compile_expression
       write_newline_opening_tag(Strings::EXPRESSION)
       compile_term
+
+      if current_token.type == TokenType::SYMBOL && Strings::OPERATORS.include?(current_token.value)
+        process(*Strings::OPERATORS)
+        compile_term
+      end
+
       write_closing_tag(Strings::EXPRESSION)
     end
 
     def compile_term
       write_newline_opening_tag(Strings::TERM)
-      process_identifier
+      type = current_token.type
+      case type
+      when TokenType::INT_CONST
+        print_and_advance
+      when TokenType::STRING_CONST
+        print_and_advance
+      when TokenType::KEYWORD
+        if Strings::EXPR_KWDS.include? current_token.value
+          print_and_advance
+        else
+          msg = "SyntaxError! Unpermitted keyword in expression"
+          raise_syntax_error(msg)
+        end
+      when TokenType::SYMBOL
+        compile_expression_with_symbol
+      when TokenType::IDENTIFIER
+        compile_expression_with_identifier
+      end
       write_closing_tag(Strings::TERM)
+    end
+
+    def compile_expression_with_symbol
+      if Strings::UNARY_OPERATORS.include? current_token.value
+        process(*Strings::UNARY_OPERATORS)
+        compile_term
+      elsif Strings::PAREN_L == current_token.value
+        process(Strings::PAREN_L)
+        compile_expression
+        process(Strings::PAREN_R)
+      else
+        msg = "SyntaxError! Unpermitted token in expression."
+        raise_syntax_error(msg)
+      end
+    end
+
+    def compile_expression_with_identifier
+      next_token = tokenizer.peek_token
+
+      if Strings::SUBROUTINE_CALL_SYMBOLS.include? next_token.value
+        compile_subroutine_call
+      elsif Strings::BRACKET_L == next_token.value
+        process_identifier
+        compile_array_index_expr
+      else
+        process_identifier
+      end
     end
 
     def compile_expression_list
