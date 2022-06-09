@@ -9,11 +9,12 @@ module Assembler
       parser = Parser.new
       symbol_table = parser.prepare_symbol_table(assembly_file)
 
-      puts symbol_table
+      p symbol_table
 
       # output file
-      filename = extract_filename(assembly_path)
-      output_file = File.open("#{filename}.hack", "a")
+      output_filename = extract_filename(assembly_path)
+      output_file = File.open("#{File.dirname(assembly_file.path)}/#{output_filename}.hack", "w")
+
 
       assembly_file = File.open(assembly_path, 'r')
       assembly_data = assembly_file.readlines.map(&:chomp)
