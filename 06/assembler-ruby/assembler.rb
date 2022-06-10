@@ -13,7 +13,7 @@ module Assembler
 
       # output file
       output_filename = extract_filename(assembly_path)
-      output_file = File.open("#{File.dirname(assembly_file.path)}/#{output_filename}.hack", "w")
+      output_file = File.open("#{File.dirname(assembly_file.path)}/#{output_filename}.hack", 'w')
 
 
       assembly_file = File.open(assembly_path, 'r')

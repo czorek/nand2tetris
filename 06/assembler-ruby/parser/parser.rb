@@ -4,6 +4,11 @@ module Assembler
   class Parser
     Instruction = Struct.new(:type, :symbol, :dest, :comp, :jump)
 
+    def initialize
+      @next_var_address = 16
+      @table = BASE_SYMBOL_TABLE.dup
+    end
+
     def parse_line(raw_line)
       line = raw_line.split('//')[0]&.strip.to_s
 
@@ -15,29 +20,19 @@ module Assembler
         return Instruction.new(L_INSTRUCTION, label, false, false, false)
       elsif is_a_instruction?(line)
         value = line[1..-1]
+        
+        if contains_variable?(line)
+          var_name = value
 
+          unless table.has_key?(var_name)
+            table.merge!(var_name => next_var_address) 
+            @next_var_address += 1
+          end
+        end
+ 
         return Instruction.new(A_INSTRUCTION, value, false, false, false)
       else
-        if line.include?('=') && line.include?(';')
-          split_line = line.split /[=;]/
-          dest = split_line[0]
-          comp = split_line[1]
-          jump = split_line[2]
-        elsif line.include?('=') && !line.include?(';')
-          split_line = line.split /[=]/
-          dest = split_line[0]
-          comp = split_line[1]
-          jump = ""
-        elsif !line.include?('=') && line.include?(';')
-          split_line = line.split /[;]/
-          dest = ""
-          comp = split_line[0]
-          jump = split_line[1]
-        else
-          dest = ""
-          comp = line
-          jump = ""
-        end
+        dest, comp, jump = parse_c_instruction(line)
  
         return Instruction.new(C_INSTRUCTION, false, dest, comp, jump)
       end
@@ -45,10 +40,7 @@ module Assembler
 
     def prepare_symbol_table(assembly_file)
       line_count = 0
-      next_var_address = 16
-
       file_data = assembly_file.readlines.map(&:chomp)
-      table = BASE_SYMBOL_TABLE.dup
 
       file_data.each do |raw_line|
         line = raw_line.split('//')[0]&.strip.to_s
@@ -64,25 +56,29 @@ module Assembler
         end
       end
 
-      file_data.each do |raw_line|
-        line = raw_line.split('//')[0]&.strip.to_s
-
-        if is_a_instruction?(line)
-          if contains_variable?(line)
-            var_name = line[1..-1]
-
-            unless table.has_key?(var_name)
-              table.merge!(var_name => next_var_address) 
-              next_var_address += 1
-            end
-          end
-        end
-      end
-
       table
     end
 
     private
+    attr_accessor :table, :next_var_address
+
+    def parse_c_instruction(line)
+      if line.include?('=') && line.include?(';')
+        split_line = line.split /[=;]/
+
+        [split_line[0], split_line[1], split_line[2]]
+      elsif line.include?('=') && !line.include?(';')
+        split_line = line.split /[=]/
+
+        [split_line[0], split_line[1], ""]
+      elsif !line.include?('=') && line.include?(';')
+        split_line = line.split /[;]/
+
+        ["", split_line[0], split_line[1]]
+      else
+        ["", line, ""]
+      end
+    end
 
     def extract_and_save_label(line, table, line_count)
       label = line[1..-2]
