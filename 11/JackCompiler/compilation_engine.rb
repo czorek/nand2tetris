@@ -1,4 +1,5 @@
-require_relative'./utils.rb'
+require_relative './utils.rb'
+require_relative './symbol_table.rb'
 
 module Jack
   class CompilationEngine
@@ -18,7 +19,7 @@ module Jack
     def compile_class
       write_newline_opening_tag(Strings::CLASS)
       process(Strings::CLASS)
-      process_identifier(Strings::CLASS)
+      process_identifier_declaration(Strings::CLASS, Strings::CLASS)
       process(Strings::C_BRACKET_L)
       compile_class_var_dec
       compile_subroutines
@@ -36,7 +37,7 @@ module Jack
       write_newline_opening_tag(Strings::CLASS_VAR_DEC)
       process(*Strings::CLASS_VAR_DEC_KWDS)
       process_type(*Strings::VAR_TYPES)
-      process_identifier_list
+      process_identifier_list(Strings::CLASS)
       write_closing_tag(Strings::CLASS_VAR_DEC)
 
       compile_class_var_dec
@@ -48,7 +49,7 @@ module Jack
       write_newline_opening_tag(Strings::VAR_DEC)
       process(*Strings::VAR)
       process_type(*Strings::VAR_TYPES)
-      process_identifier_list
+      process_identifier_list(Strings::SUBROUTINE)
       write_closing_tag(Strings::VAR_DEC)
 
       compile_var_dec
@@ -68,7 +69,7 @@ module Jack
     def compile_subroutine_declaration
       process(*Strings::SUBROUTINE_DEC_KWDS)
       process_type(*Strings::SUBROUTINE_TYPES)
-      process_identifier
+      process_identifier_declaration(Strings::SUBROUTINE, Strings::SUBROUTINE)
       process(Strings::PAREN_L)
 
       write_newline_opening_tag(Strings::PARAMETER_LIST)
@@ -113,21 +114,26 @@ module Jack
       compile_statements
     end
 
-    def process_identifier(var_kind = "")
+    def process_identifier_declaration(var_kind = "", type = "")
       if not is_number? current_token.value[0]
-        symbol_table = [Strings::CLASS, Strings::SUBROUTINE].include? var_kind ? class_symbol_table : subroutine_symbol_table
+        symbol_table = [Strings::CLASS, Strings::SUBROUTINE].include?(var_kind) ? class_symbol_table : subroutine_symbol_table
 
-        symbol_table.define_var(name: current_token.value, current_type, var_kind)
+        if type.empty?
+          type = current_type
+        end
+
+        symbol_table.define_var(name: current_token.value, type: type, kind: var_kind)
 
         var = symbol_table.fetch(current_token.value)
 
         str = <<~STR
         <name>#{var.name}</name>
         <category>#{var.kind}</category>
-        <index>#{var.index}</index>
+        <index>#{var.idx}</index>
+        <declaration/>
         STR
 
-        output_file.write line
+        output_file.write str
 
         advance
         # print_and_advance
@@ -137,12 +143,34 @@ module Jack
       end
     end
 
-    def process_identifier_list
-      process_identifier
+    def process_identifier_usage
+      var_name = current_token.value
+
+      binding.pry
+      if not is_number? current_token.value[0]
+        var = subroutine_symbol_table.fetch(var_name) ? class_symbol_table.fetch(var_name) : raise_undefined
+
+        str = <<~STR
+        <name>#{var.name}</name>
+        <category>#{var.kind}</category>
+        <index>#{var.index}</index>
+        <usage/>
+        STR
+        output_file.write str
+
+        advance
+      else
+        msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
+        raise_syntax_error(msg)
+      end
+    end
+
+    def process_identifier_list(var_kind = "")
+      process_identifier_declaration(var_kind)
 
       if current_token.value == Strings::COMMA
         process(Strings::COMMA)
-        process_identifier_list
+        process_identifier_list(var_kind)
       else
         process(Strings::SEMICOLON)
       end
@@ -153,7 +181,7 @@ module Jack
 
       process_type(*Strings::VAR_TYPES)
 
-      process_identifier
+      process_identifier_declaration(Strings::ARGUMENT)
 
       if current_token.value == Strings::COMMA
         process(Strings::COMMA)
@@ -187,7 +215,7 @@ module Jack
     def compile_let
       write_newline_opening_tag(Strings::LET_STATEMENT)
       process(Strings::LET)
-      process_identifier
+      process_identifier_usage(Strings::LOCAL)
 
       if Strings::BRACKET_L == current_token.value
         compile_array_index_expr
@@ -295,10 +323,10 @@ module Jack
       if Strings::SUBROUTINE_CALL_SYMBOLS.include? next_token.value
         compile_subroutine_call
       elsif Strings::BRACKET_L == next_token.value
-        process_identifier
+        process_identifier_usage
         compile_array_index_expr
       else
-        process_identifier
+        process_identifier_usage
       end
     end
 
@@ -314,11 +342,11 @@ module Jack
     end
 
     def compile_subroutine_call
-      process_identifier
+      process_identifier_usage
 
       if Strings::DOT == current_token.value
         process(Strings::DOT)
-        process_identifier
+        process_identifier_usage
       end
 
       process(Strings::PAREN_L)
@@ -341,7 +369,7 @@ module Jack
       current_type = current_token.value
 
       if current_token.type == TokenType::IDENTIFIER
-        process_identifier
+        process_identifier_usage
       else
         process(*var_types)
       end
@@ -382,6 +410,10 @@ module Jack
 
     def raise_syntax_error(msg)
       raise SyntaxError.new(msg)
+    end
+
+    def raise_undefined
+      raise IndetifierUndefinedError.new("Undefined identifier: #{current_token.value}")
     end
 
     def token_value

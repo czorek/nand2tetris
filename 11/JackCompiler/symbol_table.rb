@@ -1,6 +1,6 @@
 module Jack
   class SymbolTable
-    VariableEntry = Struct.new(:type, :kind, :idx)
+    VariableEntry = Struct.new(:name, :type, :kind, :idx)
     def initialize
       @table = {}
       @indexes = {
@@ -10,14 +10,14 @@ module Jack
     end
 
     def define_var(name:, type:, kind:)
-      return if [name, type, kind].any? { |arg| arg.blank? }
+      return if [name, type, kind].any? { |arg| arg.empty? }
 
-      table[name] = VariableEntry.new(type, kind, indexes[kind])
-      indexes[kind] += 1
+      table[name] = VariableEntry.new(name, type, kind, indexes[kind])
+      indexes[kind] += 1 if indexes.has_key? kind
     end
 
     def fetch(name)
-      symbol_table.fetch(name)
+      table.fetch(name, nil)
     end
 
     def var_count(var_kind)

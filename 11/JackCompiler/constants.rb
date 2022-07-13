@@ -6,6 +6,9 @@ module Jack
   module Strings
     CLASS = 'class'
     CONSTRUCTOR = 'constructor'
+    SUBROUTINE = 'subroutine'
+    ARG = 'argument'
+    LOCAL = 'local'
     FUNCTION = 'function'
     METHOD = 'method'
     FIELD = 'field'
