@@ -15,31 +15,46 @@ module Jack
       @class_symbol_table = SymbolTable.new
       @subroutine_symbol_table = SymbolTable::Subroutine.new
       @current_type = ""
+      @class_name = ""
+      @current_subroutine = ""
     end
 
     def compile_class
-      write_newline_opening_tag(Strings::CLASS)
+      # write_newline_opening_tag(Strings::CLASS)
       process(Strings::CLASS)
-      process_identifier_declaration(Strings::CLASS, Strings::CLASS)
+      # process_identifier_declaration(Strings::CLASS, Strings::CLASS)
+      process_class_name
       process(Strings::C_BRACKET_L)
       compile_class_var_dec
       compile_subroutines
       process(Strings::C_BRACKET_R)
     rescue StopIteration
-      write_closing_tag(Strings::CLASS)
+      return
+      # write_closing_tag(Strings::CLASS)
     end
 
     private
-    attr_reader :tokenizer, :output_file, :current_token, :class_symbol_table, :subroutine_symbol_table, :current_type
+    attr_reader :tokenizer, :output_file, :current_token, :class_symbol_table, :subroutine_symbol_table,
+                :current_type, :class_name, :current_subroutine
+
+    def process_class_name
+      @class_name = current_token.value
+      advance
+    end
+
+    def process_subroutine_name
+      @current_subroutine = current_token.value
+      advance
+    end
 
     def compile_class_var_dec
       return unless Strings::CLASS_VAR_DEC_KWDS.include? current_token.value
 
-      write_newline_opening_tag(Strings::CLASS_VAR_DEC)
+      # write_newline_opening_tag(Strings::CLASS_VAR_DEC)
       process(*Strings::CLASS_VAR_DEC_KWDS)
       process_type(*Strings::VAR_TYPES)
       process_identifier_list(Strings::CLASS)
-      write_closing_tag(Strings::CLASS_VAR_DEC)
+      # write_closing_tag(Strings::CLASS_VAR_DEC)
 
       compile_class_var_dec
     end
@@ -59,10 +74,12 @@ module Jack
     def compile_subroutines
       return unless Strings::SUBROUTINE_DEC_KWDS.include? current_token.value
 
-      write_newline_opening_tag(Strings::SUBROUTINE_DEC)
+      # write_newline_opening_tag(Strings::SUBROUTINE_DEC)
+      subroutine_symbol_table.reset
+
       compile_subroutine_declaration
       compile_subroutine_body
-      write_closing_tag(Strings::SUBROUTINE_DEC)
+      # write_closing_tag(Strings::SUBROUTINE_DEC)
 
       compile_subroutines
    end
@@ -70,28 +87,34 @@ module Jack
     def compile_subroutine_declaration
       process(*Strings::SUBROUTINE_DEC_KWDS)
       process_type(*Strings::SUBROUTINE_TYPES)
-      process_identifier_declaration(Strings::SUBROUTINE, Strings::SUBROUTINE)
+      # process_identifier_declaration(Strings::SUBROUTINE, Strings::SUBROUTINE)
+      process_subroutine_name
       process(Strings::PAREN_L)
 
-      write_newline_opening_tag(Strings::PARAMETER_LIST)
+      # write_newline_opening_tag(Strings::PARAMETER_LIST)
       process_parameter_list
-      write_closing_tag(Strings::PARAMETER_LIST)
+      # write_closing_tag(Strings::PARAMETER_LIST)
       process(Strings::PAREN_R)
     end
 
     def compile_subroutine_body
-      subroutine_symbol_table.reset
 
-      write_newline_opening_tag(Strings::SUBROUTINE_BODY)
+      # write_newline_opening_tag(Strings::SUBROUTINE_BODY)
       process(Strings::C_BRACKET_L)
       compile_var_dec
 
-      write_newline_opening_tag(Strings::STATEMENTS)
+      write_subroutine_declaration
+      # write_newline_opening_tag(Strings::STATEMENTS)
       compile_statements
-      write_closing_tag(Strings::STATEMENTS)
+      # write_closing_tag(Strings::STATEMENTS)
 
       process(Strings::C_BRACKET_R)
-      write_closing_tag(Strings::SUBROUTINE_BODY)
+      # write_closing_tag(Strings::SUBROUTINE_BODY)
+    end
+
+    def write_subroutine_declaration
+      line = "function #{class_name}.#{current_subroutine} #{subroutine_symbol_table.var_count(Strings::LOCAL)}"
+      output_file.write line
     end
 
     def compile_statements
@@ -137,7 +160,6 @@ module Jack
         output_file.write str
 
         advance
-        # print_and_advance
       else
         msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
         raise_syntax_error(msg)
@@ -154,7 +176,7 @@ module Jack
         index = var&.idx
 
         unless var
-          if !var && var_name[0] == var_name[0].upcase
+          if var_name[0] == var_name[0].upcase
             name = var_name
             kind = Strings::CLASS
             index = 0
@@ -245,11 +267,11 @@ module Jack
     end
 
     def compile_do
-      write_newline_opening_tag(Strings::DO_STATEMENT)
+      # write_newline_opening_tag(Strings::DO_STATEMENT)
       process(Strings::DO)
       compile_subroutine_call
       process(Strings::SEMICOLON)
-      write_closing_tag(Strings::DO_STATEMENT)
+      # write_closing_tag(Strings::DO_STATEMENT)
     end
 
     def compile_return
@@ -285,23 +307,23 @@ module Jack
     end
 
     def compile_expression
-      write_newline_opening_tag(Strings::EXPRESSION)
       compile_term
 
       if current_token.type == TokenType::SYMBOL && Strings::OPERATORS.include?(current_token.value)
-        process(*Strings::OPERATORS)
+        line = "#{current_token.value}\n"
+        output_file.write line
+        advance
         compile_term
       end
-
-      write_closing_tag(Strings::EXPRESSION)
     end
 
     def compile_term
-      write_newline_opening_tag(Strings::TERM)
       type = current_token.type
       case type
       when TokenType::INT_CONST
-        print_and_advance
+        line = "push #{current_token.value}\n"
+        output_file.write line
+        advance
       when TokenType::STRING_CONST
         print_and_advance
       when TokenType::KEYWORD
@@ -316,12 +338,13 @@ module Jack
       when TokenType::IDENTIFIER
         compile_expression_with_identifier
       end
-      write_closing_tag(Strings::TERM)
     end
 
     def compile_expression_with_symbol
       if Strings::UNARY_OPERATORS.include? current_token.value
-        process(*Strings::UNARY_OPERATORS)
+        line = "#{current_token.value}\n"
+        output_file.write line
+        advance
         compile_term
       elsif Strings::PAREN_L == current_token.value
         process(Strings::PAREN_L)
@@ -374,7 +397,8 @@ module Jack
 
     def process(*strings)
       if strings.include? current_token.value
-        print_and_advance
+        advance
+        #print_and_advance
       else
         msg = "Syntax error! current token: #{current_token.value}, expected string: #{strings}\n"
         raise_syntax_error(msg)
@@ -392,10 +416,10 @@ module Jack
     end
 
     def print_and_advance
-      type = TOKEN_TYPES_MAP[current_token.type]
-      line = opening_tag(type) + token_value + closing_tag(type)
+      # type = TOKEN_TYPES_MAP[current_token.type]
+      # line = opening_tag(type) + token_value + closing_tag(type)
 
-      output_file.write line
+      # output_file.write line
       advance
     end
 
