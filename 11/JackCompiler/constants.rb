@@ -13,6 +13,7 @@ module Jack
     METHOD = 'method'
     FIELD = 'field'
     STATIC = 'static'
+    ARGUMENT = 'argument'
     VAR = 'var'
     INT = 'int'
     CHAR = 'char'

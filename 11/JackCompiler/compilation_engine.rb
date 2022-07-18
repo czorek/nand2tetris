@@ -6,6 +6,7 @@ module Jack
     include Utils
 
     class SyntaxError < StandardError; end
+    class IdentifierUndefinedError < StandardError; end
 
     def initialize(tokenizer, output_file)
       @tokenizer = tokenizer
@@ -49,7 +50,7 @@ module Jack
       write_newline_opening_tag(Strings::VAR_DEC)
       process(*Strings::VAR)
       process_type(*Strings::VAR_TYPES)
-      process_identifier_list(Strings::SUBROUTINE)
+      process_identifier_list(Strings::LOCAL)
       write_closing_tag(Strings::VAR_DEC)
 
       compile_var_dec
@@ -116,7 +117,7 @@ module Jack
 
     def process_identifier_declaration(var_kind = "", type = "")
       if not is_number? current_token.value[0]
-        symbol_table = [Strings::CLASS, Strings::SUBROUTINE].include?(var_kind) ? class_symbol_table : subroutine_symbol_table
+        symbol_table = var_kind == Strings::CLASS ? class_symbol_table : subroutine_symbol_table
 
         if type.empty?
           type = current_type
@@ -143,26 +144,41 @@ module Jack
       end
     end
 
-    def process_identifier_usage
+    def process_identifier_usage(var_kind = "")
       var_name = current_token.value
 
-      binding.pry
-      if not is_number? current_token.value[0]
-        var = subroutine_symbol_table.fetch(var_name) ? class_symbol_table.fetch(var_name) : raise_undefined
+      if not is_number? var_name[0]
+        var = subroutine_symbol_table.fetch(var_name) || class_symbol_table.fetch(var_name)
+        name = var&.name
+        kind = var&.kind
+        index = var&.idx
+
+        unless var
+          if !var && var_name[0] == var_name[0].upcase
+            name = var_name
+            kind = Strings::CLASS
+            index = 0
+          elsif var_kind == Strings::SUBROUTINE
+            name = var_name
+            kind = var_kind
+            index = 0
+          else
+            msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
+            raise_syntax_error(msg)
+          end
+        end
 
         str = <<~STR
-        <name>#{var.name}</name>
-        <category>#{var.kind}</category>
-        <index>#{var.index}</index>
+        <name>#{name}</name>
+        <category>#{kind}</category>
+        <index>#{index}</index>
         <usage/>
         STR
         output_file.write str
 
         advance
       else
-        msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
-        raise_syntax_error(msg)
-      end
+     end
     end
 
     def process_identifier_list(var_kind = "")
@@ -346,7 +362,7 @@ module Jack
 
       if Strings::DOT == current_token.value
         process(Strings::DOT)
-        process_identifier_usage
+        process_identifier_usage(Strings::SUBROUTINE)
       end
 
       process(Strings::PAREN_L)
@@ -366,7 +382,7 @@ module Jack
     end
 
     def process_type(*var_types)
-      current_type = current_token.value
+      @current_type = current_token.value
 
       if current_token.type == TokenType::IDENTIFIER
         process_identifier_usage
@@ -413,7 +429,7 @@ module Jack
     end
 
     def raise_undefined
-      raise IndetifierUndefinedError.new("Undefined identifier: #{current_token.value}")
+      raise IdentifierUndefinedError.new("Undefined identifier: #{current_token.value}")
     end
 
     def token_value
