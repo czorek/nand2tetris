@@ -50,6 +50,19 @@ module Jack
     EQ = '='
     NOT = '~'
 
+    VM_OPERATORS = {
+      PLUS => 'add',
+      MINUS => 'sub',
+      EQ => 'eq' ,
+      GT => 'gt' ,
+      LT => 'lt' ,
+      AND => 'and',
+      OR => 'or' ,
+      # NOT => 'not'
+      DIVIDE => 'call Math.divide 2',
+      MULTIPLY => 'call Math.multiply 2'
+    }
+
     KEYWORDS = [
       CLASS,
       CONSTRUCTOR,

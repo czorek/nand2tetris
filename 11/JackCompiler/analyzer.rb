@@ -12,13 +12,13 @@ module Jack
         jack_files.each do |filename|
           puts filename
           jack_file = File.open("#{path}/#{filename}", "r")
-          output_file = File.open("#{path}/#{extract_filename(filename)}1.xml", "w")
+          output_file = File.open("#{path}/#{extract_filename(filename)}.vm", "w")
 
           process_file(jack_file, output_file)
         end
       else
         jack_file = File.open(path, "r")
-        output_file = File.open("#{File.dirname(path)}/#{extract_filename(path)}1.xml", "w")
+        output_file = File.open("#{File.dirname(path)}/#{extract_filename(path)}.vm", "w")
 
         process_file(jack_file, output_file)
       end
