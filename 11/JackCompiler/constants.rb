@@ -49,6 +49,7 @@ module Jack
     GT = '>'
     EQ = '='
     NOT = '~'
+    NEG = '-'
 
     VM_OPERATORS = {
       PLUS => 'add',
@@ -58,7 +59,6 @@ module Jack
       LT => 'lt' ,
       AND => 'and',
       OR => 'or' ,
-      # NOT => 'not'
       DIVIDE => 'call Math.divide 2',
       MULTIPLY => 'call Math.multiply 2'
     }
@@ -127,12 +127,12 @@ module Jack
       METHOD,
     ]
 
-    EXPR_KWDS = [
-      TRUE,
-      FALSE,
-      NULL,
-      THIS,
-    ]
+    EXPR_KWDS = {
+      TRUE => "push constant 1\nneg\n",
+      FALSE => "push constant 0\n",
+      NULL => "push constant 0\n",
+      THIS => "push pointer 0\n",
+    }
 
     OPERATORS = [
       PLUS,
@@ -146,10 +146,10 @@ module Jack
       EQ,
     ]
 
-    UNARY_OPERATORS = [
-      MINUS,
-      NOT,
-    ]
+    UNARY_OPERATORS = {
+      NEG => 'neg',
+      NOT => 'not',
+    }
 
     SUBROUTINE_CALL_SYMBOLS = [
       DOT,

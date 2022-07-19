@@ -19,12 +19,12 @@ module Jack
       @class_name = ""
       @current_subroutine = ""
       @arg_count = 0
+      @if_count = 0
+      @while_count = 0
     end
 
     def compile_class
-      # write_newline_opening_tag(Strings::CLASS)
       process(Strings::CLASS)
-      # process_identifier_declaration(Strings::CLASS, Strings::CLASS)
       process_class_name
       process(Strings::C_BRACKET_L)
       compile_class_var_dec
@@ -32,12 +32,12 @@ module Jack
       process(Strings::C_BRACKET_R)
     rescue StopIteration
       return
-      # write_closing_tag(Strings::CLASS)
     end
 
     private
     attr_reader :tokenizer, :output_file, :current_token, :class_symbol_table, :subroutine_symbol_table,
-                :current_var_type, :class_name, :current_subroutine, :current_subroutine_type, :arg_count
+                :current_var_type, :class_name, :current_subroutine, :current_subroutine_type, :arg_count,
+                :if_count
 
     def process_class_name
       @class_name = current_token.value
@@ -62,11 +62,9 @@ module Jack
     def compile_var_dec
       return unless Strings::VAR == current_token.value
 
-      write_newline_opening_tag(Strings::VAR_DEC)
       process(*Strings::VAR)
       @current_var_type = process_type(*Strings::VAR_TYPES)
       process_identifier_list(Strings::LOCAL)
-      write_closing_tag(Strings::VAR_DEC)
 
       compile_var_dec
     end
@@ -85,7 +83,6 @@ module Jack
     def compile_subroutine_declaration
       process(*Strings::SUBROUTINE_DEC_KWDS)
       @current_subroutine_type = process_type(*Strings::SUBROUTINE_TYPES)
-      # process_identifier_declaration(Strings::SUBROUTINE, Strings::SUBROUTINE)
       process_subroutine_name
       process(Strings::PAREN_L)
 
@@ -101,10 +98,6 @@ module Jack
       compile_statements
 
       process(Strings::C_BRACKET_R)
-
-      return unless current_subroutine_type == Strings::VOID
-
-      output_file.write "push constant 0\nreturn\n"
     end
 
     def write_subroutine_declaration
@@ -143,16 +136,16 @@ module Jack
 
         symbol_table.define_var(name: current_token.value, type: type, kind: var_kind)
 
-        var = symbol_table.fetch(current_token.value)
+        # var = symbol_table.fetch(current_token.value)
 
-        str = <<~STR
-        <name>#{var.name}</name>
-        <category>#{var.kind}</category>
-        <index>#{var.idx}</index>
-        <declaration/>
-        STR
+        # str = <<~STR
+        # <name>#{var.name}</name>
+        # <category>#{var.kind}</category>
+        # <index>#{var.idx}</index>
+        # <declaration/>
+        # STR
 
-        output_file.write str
+        # output_file.write str
 
         advance
       else
@@ -223,31 +216,49 @@ module Jack
     end
 
     def compile_if
-      write_newline_opening_tag(Strings::IF_STATEMENT)
       process(Strings::IF)
 
+      label_case_1 = "IF.#{@if_count += 1}\n"
+      label_case_2 = "IF.#{@if_count += 1}\n"
+
       compile_statement_expression
+
+      output_file.write "#{Strings::UNARY_OPERATORS[Strings::NOT]}\n"
+      output_file.write "if-goto #{label_case_1}"
+
       compile_statement_body
+
+      output_file.write "goto #{label_case_2}"
+      output_file.write "label #{label_case_1}"
 
       if Strings::ELSE == current_token.value
         process(Strings::ELSE)
         compile_statement_body
       end
 
-      write_closing_tag(Strings::IF_STATEMENT)
+      output_file.write "label #{label_case_2}"
     end
 
     def compile_while
-      write_newline_opening_tag(Strings::WHILE_STATEMENT)
       process(Strings::WHILE)
+      label_case_1 = "WHILE.#{@while_count += 1}\n"
+      label_case_2 = "WHILE.#{@while_count += 1}\n"
+
+      output_file.write "label #{label_case_1}"
+
       compile_statement_expression
+      output_file.write "#{Strings::UNARY_OPERATORS[Strings::NOT]}\n"
+      output_file.write "if-goto #{label_case_2}"
+
       compile_statement_body
-      write_closing_tag(Strings::WHILE_STATEMENT)
+
+      output_file.write "goto #{label_case_1}"
+      output_file.write "label #{label_case_2}"
     end
 
     def compile_let
-      write_newline_opening_tag(Strings::LET_STATEMENT)
       process(Strings::LET)
+      var_name = current_token.value
       process_identifier_usage(Strings::LOCAL)
 
       if Strings::BRACKET_L == current_token.value
@@ -258,29 +269,31 @@ module Jack
       compile_expression
       process(Strings::SEMICOLON)
 
-      write_closing_tag(Strings::LET_STATEMENT)
+      var = subroutine_symbol_table.fetch(var_name)
+      line = "pop #{var.kind} #{var.idx}\n"
+
+      output_file.write line
     end
 
     def compile_do
-      # write_newline_opening_tag(Strings::DO_STATEMENT)
       process(Strings::DO)
-      # compile_subroutine_call
       compile_expression
       process(Strings::SEMICOLON)
-      # write_closing_tag(Strings::DO_STATEMENT)
       output_file.write "pop temp 0\n"
     end
 
     def compile_return
-      # write_newline_opening_tag(Strings::RETURN_STATEMENT)
       process(Strings::RETURN)
 
-      unless Strings::SEMICOLON == current_token.value
+      if Strings::SEMICOLON != current_token.value
         compile_expression
+      elsif current_subroutine_type == Strings::VOID
+        output_file.write "push constant 0\n"
       end
 
       process(Strings::SEMICOLON)
-      # write_closing_tag(Strings::RETURN_STATEMENT)
+
+      output_file.write "return\n\n"
     end
 
     def compile_statement_expression
@@ -291,9 +304,7 @@ module Jack
 
     def compile_statement_body
       process(Strings::C_BRACKET_L)
-      write_newline_opening_tag(Strings::STATEMENTS)
       compile_statements
-      write_closing_tag(Strings::STATEMENTS)
       process(Strings::C_BRACKET_R)
     end
 
@@ -308,8 +319,10 @@ module Jack
 
       if current_token.type == TokenType::SYMBOL && Strings::OPERATORS.include?(current_token.value)
         line = "#{Strings::VM_OPERATORS[current_token.value]}\n"
+
         advance
         compile_term
+
         output_file.write line
       end
     end
@@ -324,8 +337,10 @@ module Jack
       when TokenType::STRING_CONST
         print_and_advance
       when TokenType::KEYWORD
-        if Strings::EXPR_KWDS.include? current_token.value
-          print_and_advance
+        if Strings::EXPR_KWDS.keys.include? current_token.value
+          line = "#{Strings::EXPR_KWDS[current_token.value]}"
+          output_file.write line
+          advance
         else
           msg = "SyntaxError! Unpermitted keyword in expression"
           raise_syntax_error(msg)
@@ -338,8 +353,8 @@ module Jack
     end
 
     def compile_expression_with_symbol
-      if Strings::UNARY_OPERATORS.include? current_token.value
-        line = "#{current_token.value}\n"
+      if Strings::UNARY_OPERATORS.keys.include? current_token.value
+        line = "#{Strings::UNARY_OPERATORS[current_token.value]}\n"
         advance
         compile_term
 
@@ -363,6 +378,12 @@ module Jack
         process_identifier_usage
         compile_array_index_expr
       else
+        var = subroutine_symbol_table.fetch(current_token.value) || class_symbol_table.fetch(current_token.value)
+
+        raise_undefined unless var
+
+        line = "push #{var.kind} #{var.idx}\n"
+        output_file.write line
         process_identifier_usage
       end
     end
@@ -407,7 +428,6 @@ module Jack
     def process(*strings)
       if strings.include? current_token.value
         advance
-        #print_and_advance
       else
         msg = "Syntax error! current token: #{current_token.value}, expected string: #{strings}\n"
         raise_syntax_error(msg)
@@ -415,7 +435,6 @@ module Jack
     end
 
     def process_type(*var_types)
-      # @current_var_type = current_token.value
       type = current_token.value
 
       if current_token.type == TokenType::IDENTIFIER
@@ -427,10 +446,6 @@ module Jack
     end
 
     def print_and_advance
-      # type = TOKEN_TYPES_MAP[current_token.type]
-      # line = opening_tag(type) + token_value + closing_tag(type)
-
-      # output_file.write line
       advance
     end
 
