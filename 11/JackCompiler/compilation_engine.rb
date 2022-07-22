@@ -421,19 +421,20 @@ module Jack
 
     def compile_subroutine_call
       @arg_count = 0
-      line, var_name = current_token.value, current_token.value
+      callee_object = current_token.value
       advance
 
-      puts var_name
       if Strings::DOT == current_token.value
-        unless Strings::OS_CLASSES.include? var_name
-          var = subroutine_symbol_table.fetch(var_name)
-          output_file.write "push #{var.kind} #{var.idx}"
+        unless is_class_name? callee_object
+          var = subroutine_symbol_table.fetch(callee_object) || class_symbol_table.fetch(callee_object)
+          output_file.write "push #{var.kind} #{var.idx}\n"
+          callee_object = var.type
+          @arg_count += 1
         end
 
         process(Strings::DOT)
 
-        line << ".#{current_token.value}"
+        callee = "#{current_token.value}"
         advance
       else
         this = subroutine_symbol_table.fetch(Strings::THIS)
@@ -446,6 +447,8 @@ module Jack
         end
 
         output_file.write this_line
+        callee = callee_object
+        callee_object = class_name
         @arg_count += 1
       end
 
@@ -453,11 +456,11 @@ module Jack
       compile_expression_list
       process(Strings::PAREN_R)
 
-      unless line.index('.')
-        line.prepend("#{class_name}.")
+      if callee_object.empty?
+        callee_object = "#{class_name}"
       end
-      line.prepend("call ")
-      line << " #{arg_count}\n"
+
+      line = "call #{callee_object}.#{callee} #{arg_count}\n"
 
       output_file.write line
     end
@@ -522,6 +525,10 @@ module Jack
 
     def raise_undefined
       raise IdentifierUndefinedError.new("Undefined identifier: #{current_token.value}")
+    end
+
+    def is_class_name?(identifier)
+      !identifier.scan(/\A[A-Z][a-zA-Z]*\z/).empty?
     end
 
     def token_value
