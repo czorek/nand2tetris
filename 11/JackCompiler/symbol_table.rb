@@ -5,7 +5,7 @@ module Jack
       @table = {}
       @indexes = {
         Strings::STATIC => 0,
-        Strings::FIELD => 0,
+        Strings::THIS => 0,
       }
     end
 
@@ -18,6 +18,10 @@ module Jack
 
     def fetch(name)
       table.fetch(name, nil)
+    end
+
+    def all_var_count
+      entries.size
     end
 
     def var_count(var_kind)

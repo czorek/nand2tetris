@@ -16,6 +16,7 @@ module Jack
       @subroutine_symbol_table = SymbolTable::Subroutine.new
       @current_var_type = ""
       @current_subroutine_type = ""
+      @current_subroutine_kind = ""
       @class_name = ""
       @current_subroutine = ""
       @arg_count = 0
@@ -35,8 +36,17 @@ module Jack
     end
 
     private
-    attr_reader :tokenizer, :output_file, :current_token, :class_symbol_table, :subroutine_symbol_table,
-                :current_var_type, :class_name, :current_subroutine, :current_subroutine_type, :arg_count,
+    attr_reader :tokenizer,
+                :output_file,
+                :current_token,
+                :class_symbol_table,
+                :subroutine_symbol_table,
+                :current_var_type,
+                :class_name,
+                :current_subroutine,
+                :current_subroutine_type,
+                :current_subroutine_kind,
+                :arg_count,
                 :if_count
 
     def process_class_name
@@ -51,10 +61,11 @@ module Jack
 
     def compile_class_var_dec
       return unless Strings::CLASS_VAR_DEC_KWDS.include? current_token.value
+      var_kind = current_token.value
 
       process(*Strings::CLASS_VAR_DEC_KWDS)
       @current_var_type = process_type(*Strings::VAR_TYPES)
-      process_identifier_list(Strings::CLASS)
+      process_identifier_list(var_kind)
 
       compile_class_var_dec
     end
@@ -71,8 +82,13 @@ module Jack
 
     def compile_subroutines
       return unless Strings::SUBROUTINE_DEC_KWDS.include? current_token.value
+      @current_subroutine_kind = current_token.value
 
       subroutine_symbol_table.reset
+
+      if current_subroutine_kind == Strings::METHOD
+        subroutine_symbol_table.define_var(name: Strings::THIS, type: class_name, kind: Strings::ARGUMENT)
+      end
 
       compile_subroutine_declaration
       compile_subroutine_body
@@ -82,8 +98,10 @@ module Jack
 
     def compile_subroutine_declaration
       process(*Strings::SUBROUTINE_DEC_KWDS)
+
       @current_subroutine_type = process_type(*Strings::SUBROUTINE_TYPES)
       process_subroutine_name
+
       process(Strings::PAREN_L)
 
       process_parameter_list
@@ -103,6 +121,14 @@ module Jack
     def write_subroutine_declaration
       line = "function #{class_name}.#{current_subroutine} #{subroutine_symbol_table.var_count(Strings::LOCAL)}\n"
       output_file.write line
+
+      if current_subroutine_kind == Strings::CONSTRUCTOR
+        block_size = class_symbol_table.all_var_count
+        output_file.write "push constant #{block_size}\ncall Memory.alloc 1\npop pointer 0\n"
+      elsif current_subroutine_kind == Strings::METHOD
+        line = "push argument 0\npop pointer 0\n"
+        output_file.write line
+      end
     end
 
     def compile_statements
@@ -128,25 +154,19 @@ module Jack
 
     def process_identifier_declaration(var_kind = "", type = "")
       if not is_number? current_token.value[0]
-        symbol_table = var_kind == Strings::CLASS ? class_symbol_table : subroutine_symbol_table
+        if Strings::CLASS_VAR_DEC_KWDS.include? var_kind
+          symbol_table = class_symbol_table
+          kind = Strings::CLASS_VAR_KIND_MAP[var_kind]
+        else
+          symbol_table = subroutine_symbol_table
+          kind = var_kind
+        end
 
         if type.empty?
           type = current_var_type
         end
 
-        symbol_table.define_var(name: current_token.value, type: type, kind: var_kind)
-
-        # var = symbol_table.fetch(current_token.value)
-
-        # str = <<~STR
-        # <name>#{var.name}</name>
-        # <category>#{var.kind}</category>
-        # <index>#{var.idx}</index>
-        # <declaration/>
-        # STR
-
-        # output_file.write str
-
+        symbol_table.define_var(name: current_token.value, type: type, kind: kind)
         advance
       else
         msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
@@ -173,7 +193,7 @@ module Jack
             kind = var_kind
             index = 0
           else
-            msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value}\n"
+            msg = "Syntax error! Identifier cannot start with a digit: #{current_token.value} tutej\n"
             raise_syntax_error(msg)
           end
         end
@@ -269,7 +289,7 @@ module Jack
       compile_expression
       process(Strings::SEMICOLON)
 
-      var = subroutine_symbol_table.fetch(var_name)
+      var = subroutine_symbol_table.fetch(var_name) || class_symbol_table.fetch(var_name)
       line = "pop #{var.kind} #{var.idx}\n"
 
       output_file.write line
@@ -400,19 +420,36 @@ module Jack
     end
 
     def compile_subroutine_call
-      line = ""
-      line << current_token.value
+      @arg_count = 0
+      line, var_name = current_token.value, current_token.value
+      advance
 
-      process_identifier_usage
-
+      puts var_name
       if Strings::DOT == current_token.value
+        unless Strings::OS_CLASSES.include? var_name
+          var = subroutine_symbol_table.fetch(var_name)
+          output_file.write "push #{var.kind} #{var.idx}"
+        end
+
         process(Strings::DOT)
+
         line << ".#{current_token.value}"
-        process_identifier_usage(Strings::SUBROUTINE)
+        advance
+      else
+        this = subroutine_symbol_table.fetch(Strings::THIS)
+
+        # case of calling methods on this in constructors
+        if this
+          this_line = "push #{this.kind} #{this.idx}\n"
+        else
+          this_line = "push pointer 0\n"
+        end
+
+        output_file.write this_line
+        @arg_count += 1
       end
 
       process(Strings::PAREN_L)
-      @arg_count = 0
       compile_expression_list
       process(Strings::PAREN_R)
 

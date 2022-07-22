@@ -29,6 +29,14 @@ module Jack
     ELSE = 'else'
     WHILE = 'while'
     RETURN = 'return'
+    ARRAY = 'Array'
+    KEYBOARD = 'Keyboard'
+    MATH = 'Math'
+    MEMORY = 'Memory'
+    OUTPUT = 'Output'
+    SCREEN = 'Screen'
+    STRING = 'String'
+    SYS = 'Sys'
 
     C_BRACKET_L = '{'
     C_BRACKET_R = '}'
@@ -51,6 +59,17 @@ module Jack
     NOT = '~'
     NEG = '-'
 
+    OS_CLASSES = [
+      ARRAY,
+      KEYBOARD,
+      MATH,
+      MEMORY,
+      OUTPUT,
+      SCREEN,
+      STRING,
+      SYS
+    ]
+
     VM_OPERATORS = {
       PLUS => 'add',
       MINUS => 'sub',
@@ -61,6 +80,11 @@ module Jack
       OR => 'or' ,
       DIVIDE => 'call Math.divide 2',
       MULTIPLY => 'call Math.multiply 2'
+    }
+
+    CLASS_VAR_KIND_MAP = {
+      FIELD => THIS,
+      STATIC => STATIC,
     }
 
     KEYWORDS = [
