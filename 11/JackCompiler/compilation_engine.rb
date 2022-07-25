@@ -355,7 +355,8 @@ module Jack
         output_file.write line
         advance
       when TokenType::STRING_CONST
-        print_and_advance
+        puts current_token.value
+        compile_string
       when TokenType::KEYWORD
         if Strings::EXPR_KWDS.keys.include? current_token.value
           line = "#{Strings::EXPR_KWDS[current_token.value]}"
@@ -463,6 +464,21 @@ module Jack
       line = "call #{callee_object}.#{callee} #{arg_count}\n"
 
       output_file.write line
+    end
+
+    def compile_string
+      str = current_token.value
+      length = str.length
+      push_length = "push constant #{length}\ncall String.new 1\n"
+      output_file.write push_length
+
+      str.each_char do |char|
+        char_code = Jack::CHARACTER_SET.fetch(char, 32)
+        line = "push constant #{char_code}\ncall String.appendChar 2\n"
+        output_file.write line
+      end
+
+      advance
     end
 
     def process(*strings)
